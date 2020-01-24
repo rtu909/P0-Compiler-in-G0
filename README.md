@@ -1,6 +1,5 @@
 
-# 4TB3 Syntax-based tools and compilers
-# Final Project
+# 4TB3 Final Project
 
 ### Group 4: Rohit Sailey, David Thompson, Raymond Tu
 
