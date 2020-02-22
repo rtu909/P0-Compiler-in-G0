@@ -46,6 +46,8 @@ which is the main programming language we will be using for this project. The co
  is easy to read, and alone would already provide readable source code to any viewer. 
  In conclusion, GoDoc is intuitive to use and similar to existing documentation standards we have experience with, 
  which makes it the perfect choice for this project.
+ 
+GoDoc: https://blog.golang.org/godoc-documenting-go-code
 
 \section{Resources}
 
@@ -58,6 +60,14 @@ Reference to the inception of the project: \url{https://groups.google.com/forum/
 \subsection{Development} % Rohit
 
 \subsection{Testing} % Raymond
+
+For testing the correctness of the P0 Compiler in Go, unit testing will be conducted. This unit testing will be done in the standard testing package that is
+included in Go. This testing package also includes statement-based code coverage checking that will be useful as a metric for how well the code is tested.
+The difference between this package and other standard unit testing for other languages such as PyTest for Python is that it does not utilize assert statements.
+Instead an error is thrown after a boolean check coded by the programmer. This will allow the test package to detect multiple errors in the program, because
+while an assert statement would stop the program after the first error, the test package in Go will instead detect the error and continue running other test cases.
+In conclusion, using the Go test package we can confirm the correctness of our sequential and concurrent implementation in Go before we test the differences in their runtimes
+and answer the defined research question.    
 
 \subsection{Poster Research} % David
 
