@@ -56,28 +56,27 @@ GoDoc: https://blog.golang.org/godoc-documenting-go-code
 Python is generally an interpreted language, but Go is compiled before execution.
 This means that the Go implementation of the P0 compiler would likely run
 faster, even if no concurrency is used.
-For a fair comparison, a few methods are available.
+In order to get a fair comparison between the compilers, a few methods are
+available.
 
 The existing P0 compiler could be manually rewritten to Go.
-This method will take a long time, and will take away time for refining the Go
-implementation.
+This method will take a long time, and would leave less time for refining the
+concurrent Go implementation.
 
 Our preferred route is to transpile the existing Python code to Go instead of
 manually translating the program.
 Google offers a Python to Go transpiler called
-\href{Grumpy}{https://github.com/google/grumpy}.
-It allows for compiling Python source code to Go source code, or to compile the
-code and immediately run it.
+\href{https://github.com/google/grumpy}{Grumpy}.
 
-If the transpiler does not work, another option would be to compile the Python
-code and the concurrent implementation to a common language.
-This is not ideal, because concurrency works differently in other programming
-languages, and frequently has more overhead.
-As a result, the efficiency of the Go implementation may be understated.
-A possible target language to compile both codebases to is JavaScript.
-There is a Python to JavaScript compiler and a Go to JavaScript compiler.
-\url{https://github.com/jashkenas/coffeescript/wiki/List-of-languages-that-compile-to-JS}
-Python's dynamic typing limits languages that can be selected as a target language.
+Another option would be to compile the Python P0 compiler and the concurrent Go
+P0 compiler to a common language, then compare their run times in that 
+language.
+This is not ideal, because concurrency works differently between programming
+languages.
+Go is known for having very efficent concurrency compared to other languages.
+As a result, the efficiency of the concurrent Go implementation may be
+understated.
+It would be preferable to use one of the previous two alternatives.
 
 \subsection{Development} % Rohit
 
@@ -97,6 +96,8 @@ and used for testing the execution time of both implementations of the P0 Compil
 accurate results to draw a conclusion from to answer the research question. How these libraries will be used for testing will be elaborated on in the Test Plan section.
 
 \subsection{Poster Research} % David
+
+
 
 \section{Division of Labour} % Everyone
 
