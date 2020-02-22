@@ -51,11 +51,31 @@ which is the main programming language we will be using for this project. The co
 
 \subsection{Transcompilation} % David
 
-In order to compare the existing implementation of the P0 compiler to the
-parallel version, 
+Python is generally an interpreted language, but Go is compiled before execution.
+This means that the Go implementation of the P0 compiler would likely run
+faster, even if no concurrency is used.
+For a fair comparison, a few methods are available.
 
-Python to Go transpiler from Google: \url{https://github.com/google/grumpy}
-Reference to the inception of the project: \url{https://groups.google.com/forum/#!topic/golang-nuts/tu75K5odt8U}
+The existing P0 compiler could be manually rewritten to Go.
+This method will take a long time, and will take away time for refining the Go
+implementation.
+
+Our preferred route is to transpile the existing Python code to Go instead of
+manually translating the program.
+Google offers a Python to Go transpiler called
+\href{Grumpy}{https://github.com/google/grumpy}.
+It allows for compiling Python source code to Go source code, or to compile the
+code and immediately run it.
+
+If the transpiler does not work, another option would be to compile the Python
+code and the concurrent implementation to a common language.
+This is not ideal, because concurrency works differently in other programming
+languages, and frequently has more overhead.
+As a result, the efficiency of the Go implementation may be understated.
+A possible target language to compile both codebases to is JavaScript.
+There is a Python to JavaScript compiler and a Go to JavaScript compiler.
+\url{https://github.com/jashkenas/coffeescript/wiki/List-of-languages-that-compile-to-JS}
+Python's dynamic typing limits languages that can be selected as a target language.
 
 \subsection{Development} % Rohit
 
