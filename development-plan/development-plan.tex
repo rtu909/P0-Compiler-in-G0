@@ -31,6 +31,28 @@ Raymond Tu, 400137262~~~~~\today
 
 How does the compilation time of the P0 Compiler differ between a sequential implementation and a concurrent implementation using Goroutines in Golang?  
 
+\subsection{Relevant Work}
+
+Many compilers forego concurrent compilation of parts of one file for two
+reasons.
+First, the concurrency mechanisms provided by the languages that other compilers
+are coded in have too much overhead.
+The time it takes to set up tasks to compile the code concurrently exceeds the
+time that could be saved by compiling concurrently.
+Next, it is much easier to compile a group of files concurrently, with one
+instance of the compiler for each file.
+This keeps each core of the processor occupied, so additional concurrency on top
+of this may not improve the compilation time much.
+
+However, Go's compiler implements compiling different portions of one file
+concurrently.
+\url{https://golang.org/doc/go1.9}.
+It is a self-hosted compiler; it itself is written in Go.
+This means it can benefit from the cheap concurrency that the language provides
+in order to facilitate the concurrent compilation.
+
+\textbf{TODO: references}
+
 \subsection{Developmental Challenges} % Rohit
 
 \subsection{Test Plan} % David
@@ -97,7 +119,7 @@ accurate results to draw a conclusion from to answer the research question. How 
 
 \subsection{Poster Research} % David
 
-
+% Actually I'm confused what needs to go here despite suggesting this section
 
 \section{Division of Labour} % Everyone
 
