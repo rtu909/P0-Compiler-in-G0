@@ -54,24 +54,21 @@ in order to facilitate the concurrent compilation.
 When developing this project, a few challenges need to be overcome to ensure the 
 project is completed correctly and on time.
 
-One major challenge is making the only significant difference between the P0 compiler
-and its concurrent counterpart the fact that the first is a sequential program and the
-latter is a concurrent program. This is necessary to ensure that the only property being
-compared between them are the fact that the first is a sequential program and the
-latter is a concurrent program. This challenge will be 
-overcome by:
+One major challenge is ensuring that the only significant difference between the P0 compiler
+and its concurrent counterpart is that the first is a sequential program and the
+latter is a concurrent program. This is necessary to ensure that any differences in compilation time can be primarily attributed to whether or not the compiler was implemented as a concurrent program. This challenge will be overcome by:
 \begin{enumerate}
 	\item Transcompiling the original P0 compiler from Python to Golang. This ensures that the
 	compilers are compiled to machine code under the same principles.
-	\item Executing tests within the same runtime environment. This ensures that the compilers
-	execute in the same way.% TODO: add to test plan
-	\item Testing the compilation time of both compilers for the same set of inputs. This allows
-	the compilation times to be compared directly.
+	\item Executing tests for each implementation of P0 within the same runtime environment. This ensures that the machine code
+	is executed in the same way for both implementations of P0.
+	\item Testing the compilation time of both compilers for the same set of inputs. This prevents
+	compilation time differences to be attributed to different inputs.
 \end{enumerate}
 \bigskip
 Another major challenge is designing the concurrent implementation of the P0 compiler.\\
 First, designing a concurrent program is difficult in general since it requires consideration of possible interleavings of program instructions. This aspect of the challenge will be overcome by referencing  material from \href{https://www.cas.mcmaster.ca/~se3bb4/}{McMaster University's SFWRENG 3BB4 course}.\\
-Second, making a \textit{compiler} concurrent is challenging since various dependencies between statements need to be respected when separating the compilation into concurrent processes. To overcome this the program to be compiled will be decomposed into independent units which can be treated as their own programs and compiled concurrently.
+Second, making a \textit{compiler} concurrent is challenging since various dependencies between statements need to be respected when separating the compilation into concurrent processes. To overcome this the program to be compiled will be decomposed into independent units which can be treated as their own programs and compiled in concurrent processes.
 
 \subsection{Test Plan} % David
 
