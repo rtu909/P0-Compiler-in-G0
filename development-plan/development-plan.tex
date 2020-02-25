@@ -126,13 +126,13 @@ It would be preferable to use one of the previous two alternatives.
 
 \subsection{Testing} % Raymond
 
-For testing the correctness of the P0 Compiler in Go, unit testing will be conducted. This unit testing will be done in the standard testing package that is
+For testing for errors in the P0 Compiler in Go, unit testing will be conducted. This unit testing will be done in the standard testing package that is
 included in Go. This testing package also includes statement-based code coverage checking that will be useful as a metric for how well the code is tested.
 The difference between this package and other standard unit testing for other languages such as PyTest for Python is that it does not utilize assert statements.
 Instead an error is thrown after a boolean check coded by the programmer. This will allow the test package to detect multiple errors in the program, because
 while an assert statement would stop the program after the first error, the test package in Go will instead detect the error and continue running other test cases.
-In conclusion, using the Go test package we can confirm the correctness of our sequential and concurrent implementation in Go before we test the differences in their runtimes
-and answer the defined research question.    
+In conclusion, using the Go test package we can eliminate errors in the sequential and concurrent implementation in Go before we test the differences in their runtimes
+and answer the defined research question. \\    
 
 For timing the execution time of the P0 Compiler, we can use a variety of different time libraries included in Python or Go. To be consistent, one timing library 
 will be chosen
