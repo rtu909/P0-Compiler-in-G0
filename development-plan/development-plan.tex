@@ -123,32 +123,32 @@ Information about GoDoc can be found at: \url{https://blog.golang.org/godoc-docu
 
 \section{Resources}
 
-\subsection{Transcompilation} % David
+\subsection{Transcompilation}
 
-Python is generally an interpreted language, but Go is compiled before execution.
-This means that the Go implementation of the P0 compiler would likely run
+Python is generally an interpreted language, but Golang is compiled before execution.
+This means that the Golang implementation of the P0 compiler would likely run
 faster, even if no concurrency is used.
 In order to get a fair comparison between the compilers, a few methods are
 available.
 
-The existing P0 compiler could be manually rewritten to Go.
+The existing P0 compiler could be manually rewritten to Golang.
 This method will take a long time, and would leave less time for refining the
-concurrent Go implementation.
+concurrent Golang implementation.
 
-Our preferred route is to transpile the existing Python code to Go instead of
-manually translating the program.
-Google offers a Python to Go transpiler called
-\href{https://github.com/google/grumpy}{Grumpy}.
-
-Another option would be to compile the Python P0 compiler and the concurrent Go
+Another method would be to compile the Python P0 compiler and the concurrent Golang
 P0 compiler to a common language, then compare their run times in that 
 language.
 This is not ideal, because concurrency works differently between programming
 languages.
-Go is known for having very efficent concurrency compared to other languages.
-As a result, the efficiency of the concurrent Go implementation may be
+Golang is known for having very efficient concurrency compared to other languages.
+As a result, the efficiency of the concurrent Golang implementation may be
 understated.
-It would be preferable to use one of the previous two alternatives.
+
+The preferred method is to transpile the existing Python code to Golang instead of
+manually translating the program.
+Google offers a Python to Golang transpiler called
+\href{https://github.com/google/grumpy}{Grumpy}.
+
 
 \subsection{Development} % Rohit
 To meet the deadline of the project, an IDE will be used to make the development of the concurrent
