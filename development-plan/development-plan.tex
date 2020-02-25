@@ -31,6 +31,28 @@ Raymond Tu, 400137262~~~~~\today
 
 How does the compilation time of the P0 Compiler differ between a sequential implementation and a concurrent implementation using Goroutines in Golang?  
 
+\subsection{Relevant Work}
+
+Many compilers forego concurrent compilation of parts of one file for two
+reasons.
+First, the concurrency mechanisms provided by the languages that other compilers
+are coded in have too much overhead.
+The time it takes to set up tasks to compile the code concurrently exceeds the
+time that could be saved by compiling concurrently.
+Next, it is much easier to compile a group of files concurrently, with one
+instance of the compiler for each file.
+This keeps each core of the processor occupied, so additional concurrency on top
+of this may not improve the compilation time much.
+
+However, Go's compiler implements compiling different portions of one file
+concurrently.
+\url{https://golang.org/doc/go1.9}.
+It is a self-hosted compiler; it itself is written in Go.
+This means it can benefit from the cheap concurrency that the language provides
+in order to facilitate the concurrent compilation.
+
+\textbf{TODO: references}
+
 \subsection{Developmental Challenges} % Rohit
 
 \subsection{Test Plan} % David
@@ -53,11 +75,30 @@ GoDoc: https://blog.golang.org/godoc-documenting-go-code
 
 \subsection{Transcompilation} % David
 
-In order to compare the existing implementation of the P0 compiler to the
-parallel version, 
+Python is generally an interpreted language, but Go is compiled before execution.
+This means that the Go implementation of the P0 compiler would likely run
+faster, even if no concurrency is used.
+In order to get a fair comparison between the compilers, a few methods are
+available.
 
-Python to Go transpiler from Google: \url{https://github.com/google/grumpy}
-Reference to the inception of the project: \url{https://groups.google.com/forum/#!topic/golang-nuts/tu75K5odt8U}
+The existing P0 compiler could be manually rewritten to Go.
+This method will take a long time, and would leave less time for refining the
+concurrent Go implementation.
+
+Our preferred route is to transpile the existing Python code to Go instead of
+manually translating the program.
+Google offers a Python to Go transpiler called
+\href{https://github.com/google/grumpy}{Grumpy}.
+
+Another option would be to compile the Python P0 compiler and the concurrent Go
+P0 compiler to a common language, then compare their run times in that 
+language.
+This is not ideal, because concurrency works differently between programming
+languages.
+Go is known for having very efficent concurrency compared to other languages.
+As a result, the efficiency of the concurrent Go implementation may be
+understated.
+It would be preferable to use one of the previous two alternatives.
 
 \subsection{Development} % Rohit
 
@@ -76,7 +117,11 @@ will be chosen
 and used for testing the execution time of both implementations of the P0 Compiler. This will ensure 
 accurate results to draw a conclusion from to answer the research question. How these libraries will be used for testing will be elaborated on in the Test Plan section.
 
-\subsection{Poster Research} % David
+\subsection{Poster} % David
+
+\LaTeX~
+
+The golang code to talk about their implementation of a concurrent compiler
 
 \section{Division of Labour} % Everyone
 
