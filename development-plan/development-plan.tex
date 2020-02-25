@@ -54,24 +54,27 @@ in order to facilitate the concurrent compilation.
 \textbf{TODO: references}
 
 \subsection{Developmental Challenges} % Rohit
-When developing this project, a few challenges need to be addressed to ensure the 
-project is completed correctly and in a timely matter.
+When developing this project, a few challenges need to be overcome to ensure the 
+project is completed correctly and on time.
 
-One major challenge is ensuring the only significant difference between the P0 compiler
-and its concurrent implementation is the fact that the first is a sequential program and the
-latter is a concurrent program. This challenge will be overcome by:
+One major challenge is making the only significant difference between the P0 compiler
+and its concurrent counterpart the fact that the first is a sequential program and the
+latter is a concurrent program. This is necessary to ensure that the only property being
+compared between them are the fact that the first is a sequential program and the
+latter is a concurrent program. This challenge will be 
+overcome by:
 \begin{enumerate}
 	\item Transcompiling the original P0 compiler from Python to Golang. This ensures that the
-	compilers are implemented in the same language and are executed in the same way.
-	\item Executing tests in Virtual Machines with the same runtime environment.
-	\item Using the same test programs to compare compilation time.
+	compilers are compiled to machine code under the same principles.
+	\item Executing tests within the same runtime environment. This ensures that the compilers
+	execute in the same way.% TODO: add to test plan
+	\item Testing the compilation time of both compilers for the same set of inputs. This allows
+	the compilation times to be compared directly.
 \end{enumerate}
-Another major challenge is designing the concurrent implementation of P0. This is a challenge
-for two reasons. First, designing a concurrent program is difficult by nature since it requires 
-careful consideration of many different interleavings of program instructions to avoid program
-halting runtime errors such as deadlocks. Second, specifically making a compiler concurrent is
-challenging since various dependencies between statements need to be respected when compiling
-in a non-sequential order to ensure a correct and valid program is compiled.
+\bigskip
+Another major challenge is designing the concurrent implementation of the P0 compiler.\\
+First, designing a concurrent program is difficult in general since it requires consideration of possible interleavings of program instructions. This aspect of the challenge will be overcome by referencing  material from \href{https://www.cas.mcmaster.ca/~se3bb4/}{McMaster University's SFWRENG 3BB4 course}.\\
+Second, making a \textit{compiler} concurrent is challenging since various dependencies between statements need to be respected when separating the compilation into concurrent processes. To overcome this the program to be compiled will be decomposed into independent units which can be treated as their own programs and compiled concurrently.
 
 \subsection{Test Plan} % David
 
@@ -149,6 +152,8 @@ To meet the deadline of the project, an IDE will be used to make the development
 P0 compiler relatively easier. \href{https://www.jetbrains.com/go/}{GoLand} will be used as the IDE
 since it is designed for Golang and offers a wide variety of development features that automate
 many tedious programming tasks.
+
+
 
 \subsection{Testing} % Raymond
 
