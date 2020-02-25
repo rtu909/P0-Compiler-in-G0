@@ -42,12 +42,11 @@ time that could be saved by compiling concurrently.
 Next, it is much easier to compile a group of files concurrently, with one
 instance of the compiler for each file.
 This keeps each core of the processor occupied, so additional concurrency on top
-of this may not improve the compilation time much.
+of this may not improve the compilation time by much.
 
-However, Go's compiler implements compiling different portions of one file
-concurrently.
-\url{https://golang.org/doc/go1.9}.
-It is a self-hosted compiler; it itself is written in Go.
+However, Golang's compiler implements compiling different portions of one file
+concurrently (see \url{https://golang.org/doc/go1.9#parallel-compile}).
+It is a self-hosted compiler, i.e., it is written in Golang which is also the language it compiles to.
 This means it can benefit from the cheap concurrency that the language provides
 in order to facilitate the concurrent compilation.
 
