@@ -1,0 +1,6 @@
+Project Proposal: 3/3
+
+Nice, ambitious project, not much to comment. As a note, the scanner can be
+implemented as a Goroutine that delivers symbols to the parser. Each procedure
+can in principle be compiled concurrently, although I would be surpirsed if
+that gains much speed. Have fun!
