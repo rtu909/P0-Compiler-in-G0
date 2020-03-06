@@ -21,6 +21,7 @@ const (
 	Enum
 	Record
 	Array
+	None
 )
 
 // Entry represents items that can be put into the SymbolTable. All entries must have a DeclType (but it can be nil)
@@ -66,13 +67,29 @@ func (st *ArraySymbolTable) NewDecl(name string, entry Entry) {
 	}
 }
 
+// Find attempts to find the innermost declaration of the symbol `name` in the symbol table.
+// If it is found, the entry is returned
+// If it is not found, a P0Const with value 0 and P0Type None is returned
 func (st *ArraySymbolTable) Find(name string) Entry {
-	for i := len(*st) - 1; i >= 0; i++ {
+	for i := len(*st) - 1; i >= 0; i-- {
 		entry, present := (*st)[i][name]
 		if present {
 			return entry
 		}
 	}
 	println("Cannot find symbol")
-	return P0Const{Int, 0}
+	return P0Const{None, 0}
+}
+
+// OpenScope opens a new (innermost) declaration scoping.
+// This means that symbols defined in the current scope could be redefined
+func (st *ArraySymbolTable) OpenScope() {
+	*st = append(*st, make(map[string]Entry))
+}
+
+// CloseScope closes the innermost scope of the symbol table.
+// Any declarations made in this scope are deleted.
+// The new innermost scope becomes the old second most inner scope.
+func (st *ArraySymbolTable) CloseScope() {
+	*st = (*st)[0 : len(*st)-1]
 }
