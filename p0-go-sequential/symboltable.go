@@ -29,11 +29,21 @@ type Entry interface {
 	GetP0Type() P0Type
 }
 
-// Var represents an entry in the symbol table for a P0 variable
+// P0Var represents an entry in the symbol table for a P0 variable
 type P0Var P0Type
 
 func (p0var P0Var) GetP0Type() P0Type {
 	return P0Type(p0var)
+}
+
+// P0Const represents an identifier that s linked to a constant value
+type P0Const struct {
+	p0type P0Type
+	value  interface{} //TODO: what needs to go here?
+}
+
+func (p0const P0Const) GetP0Type() P0Type {
+	return p0const.p0type
 }
 
 // ArraySymbolTable implements the symbol table as an array of maps from strings to the Entry
@@ -48,10 +58,21 @@ func (st *ArraySymbolTable) Init() {
 
 // NewDecl adds a new declaration to the symbol table at the current level
 func (st *ArraySymbolTable) NewDecl(name string, entry Entry) {
-	_, present = (*st)[len(*st)-1][name]
+	_, present := (*st)[len(*st)-1][name]
 	if !present {
 		(*st)[len(*st)-1][name] = entry
 	} else {
 		println("Multiple definition")
 	}
+}
+
+func (st *ArraySymbolTable) Find(name string) Entry {
+	for i := len(*st) - 1; i >= 0; i++ {
+		entry, present := (*st)[i][name]
+		if present {
+			return entry
+		}
+	}
+	println("Cannot find symbol")
+	return P0Const{Int, 0}
 }

@@ -6,7 +6,12 @@ func TestInit(t *testing.T) {
 	// a) Not necessarily, but often it is
 	// b) If the requirement disallows zero, but zero is actually a valid input that is easy to account for
 	// c) No process could always prevent late detection of faults, but some are better than others at detecting them earlier
-	var ast ArraySymbolTable
-	ast.Init()
-	ast.NewDecl("potate" /*TODO*/)
+	var st ArraySymbolTable
+	var entry P0Var
+	st.Init()
+	st.NewDecl("potate", entry)
+	found := st.Find("potate")
+	if found.GetP0Type() != Int {
+		t.Errorf("The type of variable potate was incorrect")
+	}
 }
