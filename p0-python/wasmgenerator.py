@@ -233,13 +233,9 @@ def genCall(pr, ap):
     asm.append('call $' + pr.name)
 
 def genRead(x):
-    global curlev
     asm.append('call $read')
-    if x.lev == 0: asm.append('global.set $' + x.name)
-    elif x.lev == curlev: asm.append('local.set $' + x.name)
-    elif x.lev == -2: asm.append('i32.store')
-    else: mark('WASM: level!')
-    y = Var(Int); y.lev = -1 # WTF is this supposed to do
+    y = Var(Int); y.lev = -1
+    genAssign(x, y)
 
 def genWrite(x):
     loadItem(x)
