@@ -1,4 +1,7 @@
 package main
+import (
+
+)
 
 //symbols as integer constants
 var TIMES = 1
@@ -48,7 +51,7 @@ var line, lastline, errline int
 var pos, lastpos, errpos int
 var sym, val interface{}
 var error bool
-var source string
+var source, ch string
 var index int
 
 //initialization of the scanner
@@ -64,7 +67,17 @@ func initial(src string) {
 //variables line, pos are updated with the current location in source
 //lastline, lastpos are updated with location of previously read character
 func getChar(){
-	if index ==
+	if index == len(source){
+		ch = string(0) //equivalent to chr(0), converts 0 to UTF=8 string
+	} else {
+		ch, index = string(source[index]), index + 1
+		lastpos = pos
+		if ch == string('\n'){
+			pos, line = 0, line + 1
+		} else {
+			lastline, pos = line, pos + 1
+		}
+	}
 }
 
 func mark(){
