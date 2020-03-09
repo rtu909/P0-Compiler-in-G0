@@ -23,45 +23,124 @@ const (
 	None
 )
 
+// Entry represents items that can be put into the SymbolTable.
+// All entries have a type.
+type Entry interface {
+	GetP0Type() P0Type
+	GetFieldNames() []string
+	GetValue() interface{}
+	GetArrayLowerBound() int
+	GetArrayLength() int
+}
+
 // P0Type is a representation of composite data types in P0.
 // It consists of the base type, p0primitive, combined with the constituent types, typeComponents.
 // If the base type is one of Int, Bool, or None, typeComponents can be nil and should not be accessed.
 // If the base type is Array, typeComponents must be of length 1 and contain the type that the array holds.
 // If the base type is Record, typeComponents must be of length 1 or greater.
 // The values represent the types of the fields, in the order that they appear in the Record.
+// P0Type implements Entry so that type declarations can be stored in the table.
 type P0Type struct {
 	p0primitive    P0Primitive
 	typeComponents []P0Type
 }
 
-// Entry represents items that can be put into the SymbolTable.
-// All entries have a type.
-type Entry interface {
-	GetP0Type() P0Type
-	GetFieldNames() []string
-	IsConstant() bool
-	GetValue() int
-	GetLowerBound() int
-	GetLength() int
+// This is how Dr. Emil implemented it; a type declaration has no value.
+func (p0type P0Type) GetP0Type() P0Type {
+	return P0Type{None, nil}
+}
+
+func (p0type P0Type) GetFieldNames() []string {
+	return nil
+}
+
+// The value of a type declaration is the type
+func (p0type P0Type) GetValue() interface{} {
+	return p0type
+}
+
+func (p0type P0Type) GetArrayLowerBound() int {
+	return 0
+}
+
+func (p0type P0Type) GetArrayLength() int {
+	return 0
 }
 
 // P0Var represents an entry in the symbol table for a P0 variable
+// It implements the Entry interface so that it can be stored in the symbol table, although most of the functions aren't relevant
 type P0Var P0Type
 
-// P0Var implements the Entry interface so that it can be stored in the symbol table.
 func (p0var P0Var) GetP0Type() P0Type {
 	return P0Type(p0var)
 }
 
-// P0Const represents an identifier that is linked to a constant value.
-type P0Const struct {
-	p0type P0Type
-	value  interface{} //TODO: what needs to go here?
+func (p0var P0Var) GetFieldNames() []string {
+	return nil
 }
 
-// P0Const implements the Entry interface so that it can be stored in the symbol table
+func (p0var P0Var) GetValue() interface{} {
+	return nil
+}
+
+func (p0var P0Var) GetArrayLowerBound() int {
+	return 0
+}
+
+func (p0var P0Var) GetArrayLength() int {
+	return 0
+}
+
+// P0Const represents an identifier that is linked to a constant value.
+// It implements the Entry interface so that it can be stored in the symbol table
+type P0Const struct {
+	p0type P0Type
+	value  interface{}
+}
+
 func (p0const P0Const) GetP0Type() P0Type {
 	return p0const.p0type
+}
+
+func (p0const P0Const) GetFieldNames() []string {
+	return nil
+}
+
+func (p0const P0Const) GetValue() interface{} {
+	return p0const.value
+}
+
+func (p0const P0Const) GetArrayLowerBound() int {
+	return 0
+}
+
+func (p0const P0Const) GetArrayLength() int {
+	return 0
+}
+
+type P0Proc struct {
+	p0type         P0Type
+	parameterNames []string
+}
+
+func (p0proc P0Proc) GetP0Type() P0Type {
+	return p0proc.p0type
+}
+
+func (p0proc P0Proc) GetFieldNames() []string {
+	return p0proc.parameterNames
+}
+
+func (p0proc P0Proc) GetValue() interface{} {
+	return nil
+}
+
+func (p0proc P0Proc) GetArrayLowerBound() int {
+	return 0
+}
+
+func (p0proc P0Proc) GetArrayLength() int {
+	return 0
 }
 
 // SliceMapSymbolTable implements the symbol table as a slice of maps from string to Entry
