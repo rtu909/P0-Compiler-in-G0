@@ -1,8 +1,7 @@
 package main
 import (
-
+	"fmt"
 )
-
 //symbols as integer constants
 var TIMES = 1
 var DIV = 2
@@ -79,9 +78,12 @@ func getChar(){
 		}
 	}
 }
-
-func mark(){
-
+//prints error message with current location in the source
+func mark(msg string){
+	if (lastline > errline) || (lastpos > errpos){
+		fmt.Println("error: line", lastline, "pos", lastpos, msg)
+	}
+	errline, errpos, error = lastline, lastpos, true
 }
 
 func number(){
