@@ -19,7 +19,7 @@ func selector(x Entry) Entry {
 		if sym == PERIOD { // x.f
 			getSym()
 			if sym == IDENT {
-				if x.GetP0Type() == Record {
+				if x.GetP0Type().p0primitive == Record {
 					for f := range x.GetFieldNames() {
 						if f == val {
 							// x = CG.genSelect(x, f);
@@ -38,11 +38,12 @@ func selector(x Entry) Entry {
 		} else { // x[y]
 			getSym()
 			var y = expression()
-			if x.GetP0Type() == Array {
-				if y.GetP0Type() == Int {
-					var value = y.GetValue()
-					var lowerbound = x.GetLowerBound()
-					if y.IsConstant() && value < lowerbound || y.GetValue() >= lowerbound+x.GetLength() {
+			if x.GetP0Type().p0primitive == Array {
+				if y.GetP0Type().p0primitive == Int {
+					var value = (y.GetValue()).(int)
+					var lowerbound = x.GetArrayLowerBound()
+					yAsConst, castSucceed := y.(P0Const)
+					if castSucceed && value < lowerbound || yAsConst.GetValue().(int) >= lowerbound+x.GetArrayLength() {
 						mark("index out of bounds")
 					} else {
 						// x = CG.genIndex(x, y)

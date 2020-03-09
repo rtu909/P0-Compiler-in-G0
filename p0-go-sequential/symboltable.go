@@ -143,6 +143,32 @@ func (p0proc P0Proc) GetArrayLength() int {
 	return 0
 }
 
+// P0StdProc is used to represent standard library procedures in the SymbolTable
+type P0StdProc struct {
+	p0type         P0Type
+	parameterNames []string
+}
+
+func (p0proc P0StdProc) GetP0Type() P0Type {
+	return p0proc.p0type
+}
+
+func (p0proc P0StdProc) GetFieldNames() []string {
+	return p0proc.parameterNames
+}
+
+func (p0proc P0StdProc) GetValue() interface{} {
+	return nil
+}
+
+func (p0proc P0StdProc) GetArrayLowerBound() int {
+	return 0
+}
+
+func (p0proc P0StdProc) GetArrayLength() int {
+	return 0
+}
+
 // SliceMapSymbolTable implements the symbol table as a slice of maps from string to Entry
 type SliceMapSymbolTable []map[string]Entry
 
