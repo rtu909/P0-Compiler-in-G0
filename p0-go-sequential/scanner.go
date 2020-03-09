@@ -107,9 +107,18 @@ var KEYWORDS = map[string]int{
 	"const": CONST, "type": TYPE, "var": VAR, "procedure": PROCEDURE, "begin": BEGIN, "program": PROGRAM,
 }
 
-
 func identKW(){
-
+	start := index - 1
+	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9"){
+		getChar()
+	}
+	val = source[start:index-1]
+	var exists bool
+	sym, exists = KEYWORDS[val.(string)]
+	//if val is not in KEYWORDS dictionary, then sym is IDENT
+	if (!exists){
+		sym = IDENT
+	}
 }
 
 func comment(){
