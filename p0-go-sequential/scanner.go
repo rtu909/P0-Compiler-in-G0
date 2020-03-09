@@ -101,6 +101,13 @@ func number(){
 	}
 }
 
+var KEYWORDS = map[string]int{
+	"div": DIV, "mod": MOD, "and": AND, "or": OR, "of": OF, "then": THEN, "do": DO, "not": NOT,
+	"end": END, "else": ELSE, "if": IF, "while": WHILE, "array": ARRAY, "record": RECORD,
+	"const": CONST, "type": TYPE, "var": VAR, "procedure": PROCEDURE, "begin": BEGIN, "program": PROGRAM,
+}
+
+
 func identKW(){
 
 }
