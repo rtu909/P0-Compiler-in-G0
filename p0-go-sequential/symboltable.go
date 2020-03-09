@@ -38,6 +38,11 @@ type P0Type struct {
 // All entries have a type.
 type Entry interface {
 	GetP0Type() P0Type
+	GetFieldNames() []string
+	IsConstant() bool
+	GetValue() int
+	GetLowerBound() int
+	GetLength() int
 }
 
 // P0Var represents an entry in the symbol table for a P0 variable
