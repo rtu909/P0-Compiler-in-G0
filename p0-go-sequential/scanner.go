@@ -122,7 +122,14 @@ func identKW(){
 }
 
 func comment(){
-
+	for (string(0) != ch) && (ch != "}"){
+		getChar()
+	}
+	if ch == string(0){
+		mark("comment not terminated")
+	} else {
+		getChar()
+	}
 }
 //recognizes the next symbol and assigns it to the variables sym and val
 func getSym() {
