@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -59,7 +60,7 @@ var index int
 
 //initialization of the scanner
 //source is string
-func initial(src string) {
+func ScannerInit(src string) {
 	line, lastline, errline = 1, 1, 1
 	pos, lastpos, errpos = 0, 0, 0
 	sym, val, error, source, index = 0, nil, false, src, 0
@@ -96,12 +97,14 @@ func mark(msg string) {
 func number() {
 	sym, val = NUMBER, 0
 	for "0" <= ch && ch <= "9" {
-		val, _ = strconv.Atoi(ch)
-		tempVal := 10 * val.(int)
-		val = val.(int) + tempVal //weird stuff, check this
+		var tempVal int
+		tempVal, _ = strconv.Atoi(ch)
+		val = tempVal + 10 * val.(int) //weird stuff, check this
 		getChar()
 	}
-	if val.(int) >= 2^31 {
+	fmt.Println(int(math.Pow(2, 31)))
+	fmt.Println(val.(int))
+	if val.(int) >= int(math.Pow(2, 31)){
 		mark("number too large")
 		val = 0
 	}
