@@ -140,5 +140,61 @@ func comment() {
 
 //recognizes the next symbol and assigns it to the variables sym and val
 func getSym() {
-
+	for (string(0) < ch) && (ch <= " "){
+		getChar()
+	}
+	if ("A" <= ch) && (ch <= "Z") || ("a" <= ch) && (ch <= "z"){
+		identKW()
+	} else if ("0" <= ch) && (ch <= "9"){
+		number()
+	} else if (ch == "{"){
+		comment(); getSym()
+	} else if (ch == "*"){
+		getChar(); sym = TIMES
+	} else if (ch == "+"){
+		getChar(); sym = PLUS
+	} else if (ch == "-"){
+		getChar(); sym = MINUS
+	} else if (ch == "="){
+		getChar(); sym = EQ
+	} else if (ch == "<"){
+		getChar()
+		if (ch == "="){
+			getChar(); sym = LE
+		} else if (ch == ">"){
+			getChar(); sym = NE
+		} else {
+			sym = LT
+		}
+	} else if (ch == ">"){
+		getChar()
+		if (ch == "="){
+			getChar(); sym = GE
+		} else {
+			sym = GT
+		}
+	} else if (ch == ";"){
+		getChar(); sym = SEMICOLON
+	} else if (ch == ","){
+		getChar(); sym = COMMA
+	} else if (ch == ":"){
+		getChar()
+		if (ch == "="){
+			getChar(); sym = BECOMES
+		} else {
+			sym = COLON
+		}
+	} else if (ch == "."){
+		getChar(); sym = PERIOD
+	} else if (ch == "("){
+		getChar(); sym = LPAREN
+	} else if (ch == ")"){
+		getChar(); sym = RPAREN
+	} else if (ch == "["){
+		getChar(); sym = LBRAK
+	} else if (ch == string(0)){
+		getChar(); sym = EOF
+	} else{
+		mark("illegal character"); getChar(); sym = 0
+	}
 }
