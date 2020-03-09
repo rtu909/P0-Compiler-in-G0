@@ -1,6 +1,6 @@
 package main
 
-//global variables
+//symbols as integer constants
 var TIMES = 1
 var DIV = 2
 var MOD = 3
@@ -42,3 +42,47 @@ var PROCEDURE = 38
 var BEGIN = 39
 var PROGRAM = 40
 var EOF = 41
+
+//global variables
+var line, lastline, errline int
+var pos, lastpos, errpos int
+var sym, val interface{}
+var error bool
+var source string
+var index int
+
+//initialization of the scanner
+//source is string
+func initial(src string) {
+	line, lastline, errline = 1,1,1
+	pos, lastpos, errpos = 0,0,0
+	sym, val, error, source, index = nil, nil, false, src, 0
+	getChar(); getSym()
+}
+
+//assigns the next character in ch
+//variables line, pos are updated with the current location in source
+//lastline, lastpos are updated with location of previously read character
+func getChar(){
+	if index ==
+}
+
+func mark(){
+
+}
+
+func number(){
+
+}
+
+func identKW(){
+
+}
+
+func comment(){
+
+}
+//recognizes the next symbol and assigns it to the variables sym and val
+func getSym() {
+
+}
