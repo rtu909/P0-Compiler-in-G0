@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestInitialization(t *testing.T) {
-	scannerInit("potato")
+	ScannerInit("potato")
 	//if found.GetP0Type().p0primitive != Int {
 	//	t.Errorf("The type of variable potate was incorrect")
 	//}
