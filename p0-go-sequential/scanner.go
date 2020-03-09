@@ -1,6 +1,7 @@
 package main
 import (
 	"fmt"
+	"strconv"
 )
 //symbols as integer constants
 var TIMES = 1
@@ -86,8 +87,18 @@ func mark(msg string){
 	errline, errpos, error = lastline, lastpos, true
 }
 
+//sets sym to NUMBER and assigns NUMBER to val
 func number(){
-
+	sym, val = NUMBER, 0
+	for "0" <= ch && ch <= "9"{
+		val, _ = strconv.Atoi(ch)
+		tempVal := 10*val.(int)
+		val = val.(int) + tempVal //weird stuff, check this
+		getChar()
+	}
+	if val.(int) >= 2^31{
+		mark("number too large"); val = 0
+	}
 }
 
 func identKW(){
