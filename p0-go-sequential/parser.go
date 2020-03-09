@@ -63,6 +63,16 @@ func selector(x Entry) Entry {
 	return x
 }
 
+func factor() {
+	if !doesContain(FIRSTFACTOR[:], sym) {
+		mark("expression expected")
+		for !(doesContain(FOLLOWFACTOR[:], sym) || doesContain(STRONGSYMS[:], sym) ||
+			doesContain(FIRSTFACTOR[:], sym)) {
+			getSym()
+		}
+	}
+}
+
 // TODO: IMPLEMENT
 func expression() Entry {
 	return nil
