@@ -1,8 +1,10 @@
 package main
+
 import (
 	"fmt"
 	"strconv"
 )
+
 //symbols as integer constants
 var TIMES = 1
 var DIV = 2
@@ -49,7 +51,8 @@ var EOF = 41
 //global variables
 var line, lastline, errline int
 var pos, lastpos, errpos int
-var sym, val interface{}
+var sym int
+var val interface{}
 var error bool
 var source, ch string
 var index int
@@ -57,47 +60,50 @@ var index int
 //initialization of the scanner
 //source is string
 func initial(src string) {
-	line, lastline, errline = 1,1,1
-	pos, lastpos, errpos = 0,0,0
-	sym, val, error, source, index = nil, nil, false, src, 0
-	getChar(); getSym()
+	line, lastline, errline = 1, 1, 1
+	pos, lastpos, errpos = 0, 0, 0
+	sym, val, error, source, index = 0, nil, false, src, 0
+	getChar()
+	getSym()
 }
 
 //assigns the next character in ch
 //variables line, pos are updated with the current location in source
 //lastline, lastpos are updated with location of previously read character
-func getChar(){
-	if index == len(source){
+func getChar() {
+	if index == len(source) {
 		ch = string(0) //equivalent to chr(0), converts 0 to UTF=8 string
 	} else {
-		ch, index = string(source[index]), index + 1
+		ch, index = string(source[index]), index+1
 		lastpos = pos
-		if ch == string('\n'){
-			pos, line = 0, line + 1
+		if ch == string('\n') {
+			pos, line = 0, line+1
 		} else {
-			lastline, pos = line, pos + 1
+			lastline, pos = line, pos+1
 		}
 	}
 }
+
 //prints error message with current location in the source
-func mark(msg string){
-	if (lastline > errline) || (lastpos > errpos){
+func mark(msg string) {
+	if (lastline > errline) || (lastpos > errpos) {
 		fmt.Println("error: line", lastline, "pos", lastpos, msg)
 	}
 	errline, errpos, error = lastline, lastpos, true
 }
 
 //sets sym to NUMBER and assigns NUMBER to val
-func number(){
+func number() {
 	sym, val = NUMBER, 0
-	for "0" <= ch && ch <= "9"{
+	for "0" <= ch && ch <= "9" {
 		val, _ = strconv.Atoi(ch)
-		tempVal := 10*val.(int)
+		tempVal := 10 * val.(int)
 		val = val.(int) + tempVal //weird stuff, check this
 		getChar()
 	}
-	if val.(int) >= 2^31{
-		mark("number too large"); val = 0
+	if val.(int) >= 2^31 {
+		mark("number too large")
+		val = 0
 	}
 }
 
@@ -107,30 +113,31 @@ var KEYWORDS = map[string]int{
 	"const": CONST, "type": TYPE, "var": VAR, "procedure": PROCEDURE, "begin": BEGIN, "program": PROGRAM,
 }
 
-func identKW(){
+func identKW() {
 	start := index - 1
-	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9"){
+	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
 		getChar()
 	}
-	val = source[start:index-1]
+	val = source[start : index-1]
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
 	//if val is not in KEYWORDS dictionary, then sym is IDENT
-	if (!exists){
+	if !exists {
 		sym = IDENT
 	}
 }
 
-func comment(){
-	for (string(0) != ch) && (ch != "}"){
+func comment() {
+	for (string(0) != ch) && (ch != "}") {
 		getChar()
 	}
-	if ch == string(0){
+	if ch == string(0) {
 		mark("comment not terminated")
 	} else {
 		getChar()
 	}
 }
+
 //recognizes the next symbol and assigns it to the variables sym and val
 func getSym() {
 
