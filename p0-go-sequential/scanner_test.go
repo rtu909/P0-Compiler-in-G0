@@ -122,7 +122,7 @@ func TestRParen(t *testing.T) {
 }
 
 func TestRBRak(t *testing.T) {
-	ScannerInit("}")
+	ScannerInit("]")
 	if sym != 18 {
 		t.Errorf("The symbol found is incorrect")
 	}
@@ -136,7 +136,7 @@ func TestOf(t *testing.T) {
 }
 
 func TestThen(t *testing.T) {
-	ScannerInit(")")
+	ScannerInit("then")
 	if sym != 20 {
 		t.Errorf("The symbol found is incorrect")
 	}
@@ -152,6 +152,140 @@ func TestDo(t *testing.T) {
 func TestLParen(t *testing.T) {
 	ScannerInit("(")
 	if sym != 22 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestLBrak(t *testing.T) {
+	ScannerInit("[")
+	if sym != 23 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestNot(t *testing.T) {
+	ScannerInit("not")
+	if sym != 24 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestBecomes(t *testing.T) {
+	ScannerInit(":=")
+	if sym != 25 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestNumber(t *testing.T) {
+	ScannerInit("23456")
+	if sym != 26 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestIdent(t *testing.T) {
+	ScannerInit("potato")
+	if sym != 27 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestSemicolon(t *testing.T) {
+	ScannerInit(";")
+	if sym != 28 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestEnd(t *testing.T) {
+	ScannerInit("end")
+	if sym != 29 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestElse(t *testing.T) {
+	ScannerInit("else")
+	if sym != 30 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestIf(t *testing.T) {
+	ScannerInit("if")
+	if sym != 31 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestWhile(t *testing.T) {
+	ScannerInit("while")
+	if sym != 32 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestArray(t *testing.T) {
+	ScannerInit("array")
+	if sym != 33 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestRecord(t *testing.T) {
+	ScannerInit("record")
+	if sym != 34 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestConst(t *testing.T) {
+	ScannerInit("const")
+	if sym != 35 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestType(t *testing.T) {
+	ScannerInit("type")
+	if sym != 36 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestVar(t *testing.T) {
+	ScannerInit("var")
+	if sym != 37 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestProcedure(t *testing.T) {
+	ScannerInit("procedure")
+	if sym != 38 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestBegin(t *testing.T) {
+	ScannerInit("begin")
+	if sym != 39 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestProgram(t *testing.T) {
+	ScannerInit("program")
+	if sym != 40 {
+		t.Errorf("The symbol found is incorrect")
+	}
+}
+
+func TestEOF(t *testing.T) {
+	ScannerInit("00")
+	getSym()
+	if sym != 41 {
 		t.Errorf("The symbol found is incorrect")
 	}
 }

@@ -197,6 +197,9 @@ func getSym() {
 		getChar(); sym = RPAREN
 	} else if (ch == "["){
 		getChar(); sym = LBRAK
+	} else if (ch == "]") {
+		getChar();
+		sym = RBRAK
 	} else if (ch == string(0)){
 		getChar(); sym = EOF
 	} else{
