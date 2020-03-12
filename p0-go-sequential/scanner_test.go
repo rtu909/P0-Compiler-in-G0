@@ -289,3 +289,25 @@ func TestEOF(t *testing.T) {
 		t.Errorf("The symbol found is incorrect")
 	}
 }
+
+func TestMaxInt(t *testing.T) {
+	ScannerInit("2147483649")
+	if !error {
+		t.Errorf("Number exceeds max int that can be stored, should have error")
+	}
+}
+
+func TestOpenComment(t *testing.T) {
+	ScannerInit("{000")
+	if !error {
+		t.Errorf("Comment not closed")
+	}
+}
+
+func TestInvalidChar(t *testing.T) {
+	ScannerInit("%")
+	if !error {
+		t.Errorf("Invalid char")
+	}
+}
+
