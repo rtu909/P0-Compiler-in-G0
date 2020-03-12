@@ -121,11 +121,13 @@ func identKW() {
 	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
 		getChar()
 	}
-	val = source[start : index-1]
+	val = source[start : index] //originally -1
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
+	fmt.Println(sym)
 	//if val is not in KEYWORDS dictionary, then sym is IDENT
 	if !exists {
+		fmt.Println("didn't work")
 		sym = IDENT
 	}
 }
@@ -188,9 +190,9 @@ func getSym() {
 			sym = COLON
 		}
 	} else if (ch == "."){
-		getChar(); sym = PERIOD
+		getChar(); sym = PERIOD; fmt.Println("period")
 	} else if (ch == "("){
-		getChar(); sym = LPAREN
+		getChar(); sym = LPAREN; fmt.Println("parentheses")
 	} else if (ch == ")"){
 		getChar(); sym = RPAREN
 	} else if (ch == "["){
@@ -198,6 +200,8 @@ func getSym() {
 	} else if (ch == string(0)){
 		getChar(); sym = EOF
 	} else{
-		mark("illegal character"); getChar(); sym = 0
+		mark("illegal character")
+		getChar()
+		sym = 0
 	}
 }
