@@ -1,5 +1,15 @@
 package main
 
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"runtime"
+	"strings"
+)
+
 var FIRSTFACTOR = [4]int{IDENT, NUMBER, LPAREN, NOT}
 var FOLLOWFACTOR = [22]int{TIMES, DIV, MOD, AND, OR, PLUS, MINUS, EQ, NE, LT, LE, GT, GE, COMMA, SEMICOLON, THEN, ELSE,
 	RPAREN, RBRAK, DO, PERIOD, END}
@@ -72,11 +82,69 @@ func factor() {
 			getSym()
 		}
 	}
+	if sym == IDENT {
+		// CONTINUE FROM HERE
+	}
 }
 
 // TODO: IMPLEMENT
 func expression() Entry {
 	return nil
+}
+
+// P0Primitive is an enumerated type that represents one of the built-in types in P0.
+// It is only meant to represent the base types; composite types are represented in P0Type
+type P0Target int
+
+const (
+	Wat P0Target = iota
+	Mips
+)
+
+func compileFile(sourceFilePath string, target string) {
+	if strings.HasSuffix(sourceFilePath, ".p") {
+		var fileData, fileOpenError = ioutil.ReadFile(sourceFilePath)
+		panicIfError(fileOpenError)
+		var sourceCode = string(fileData)
+		var destinationFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
+		compileString(sourceCode, destinationFilePath, toP0Target(target))
+	} else {
+		fmt.Printf(".p file extension expected")
+		panic(nil)
+	}
+}
+
+func toP0Target(target string) P0Target {
+	switch target {
+	case "wat":
+		return Wat
+	case "mips":
+		return Mips
+	default:
+		fmt.Printf("target does not exist")
+		panic(nil)
+	}
+}
+
+func panicIfError(e interface{}) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func compileString(sourceCode string, destinationFilePath string, target P0Target) {
+	switch target {
+	case Wat:
+		// Prepare
+	case Mips:
+		// Prepare
+	default:
+		fmt.Printf("target recognized but is not supported")
+		panic(nil)
+	}
+	ScannerInit(sourceCode)
+	st := new(SliceMapSymbolTable)
+	st.Init()
 }
 
 func doesContain(elements []int, e int) bool {
