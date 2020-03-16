@@ -35,7 +35,7 @@ type Entry interface {
 
 // P0Type is a representation of composite data types in P0.
 // It consists of the base type, p0primitive, combined with the constituent types, typeComponents.
-// It also has a field size, which is used by the generator to specify how much space this type takes in memory in
+// It also has a size, which is used by the generator to specify how much space this type takes in memory in
 // a given programming language. This value can be set to 0 by default; it will be recalculated by the generator.
 // If the base type is one of Int, Bool, or None, typeComponents can be nil and should not be accessed.
 // If the base type is Array, typeComponents must be of length 1 and contain the type that the array holds.
