@@ -21,3 +21,8 @@ func (wg *WasmGenerator) GenBool(p0Type P0Type) P0Type {
 	//p0Type.size = 1 // TODO: add this to P0Type
 	return p0Type
 }
+
+func (wg *WasmGenerator) GenInt(p0Type P0Type) P0Type {
+	p0Type.size = 4 // TODO: add to P0type
+	return p0Type
+}

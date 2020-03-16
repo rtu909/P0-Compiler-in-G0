@@ -4,7 +4,7 @@ import "testing"
 
 func TestVariableFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myVar := P0Var{Bool, nil}
+	myVar := P0Var{Bool, nil, 0}
 	st.Init()
 	st.NewDecl("potato", myVar)
 	found := st.Find("potato")
@@ -15,7 +15,7 @@ func TestVariableFind(t *testing.T) {
 
 func TestConstantFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Const{P0Type{Int, nil}, 67}
+	myConst := P0Const{P0Type{Int, nil, 0}, 67}
 	st.Init()
 	st.NewDecl("i", myConst)
 	found := st.Find("i")
@@ -46,7 +46,7 @@ func TestEmptyFind(t *testing.T) {
 
 func TestDeclDroppedOutOfScope(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Var{Int, nil}
+	myConst := P0Var{Int, nil, 0}
 	st.Init()
 	st.OpenScope()
 	st.NewDecl("potato", myConst)
@@ -60,8 +60,8 @@ func TestDeclDroppedOutOfScope(t *testing.T) {
 
 func TestOuterDeclarationFound(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst1 := P0Const{P0Type{Int, nil}, 42}
-	myConst2 := P0Const{P0Type{Int, nil}, 68}
+	myConst1 := P0Const{P0Type{Int, nil, 0}, 42}
+	myConst2 := P0Const{P0Type{Int, nil, 0}, 68}
 	st.Init()
 	st.NewDecl("potato", myConst1)
 	st.OpenScope()
@@ -79,7 +79,7 @@ func TestOuterDeclarationFound(t *testing.T) {
 
 func TestFindDeclarationFromInnerLabel(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Const{P0Type{Int, nil}, 42}
+	myConst := P0Const{P0Type{Int, nil, 0}, 42}
 	st.Init()
 	st.NewDecl("potato", myConst)
 	st.OpenScope()

@@ -8,7 +8,7 @@ type SymbolTable interface {
 	Find(string) Entry
 	OpenScope()
 	CloseScope()
-	TopScope() // TODO: how to implement, b/c the parser needs to work with this directly
+	TopScope() map[string]Entry
 }
 
 // P0Primitive is an enumerated type that represents one of the built-in types in P0.
@@ -35,6 +35,8 @@ type Entry interface {
 
 // P0Type is a representation of composite data types in P0.
 // It consists of the base type, p0primitive, combined with the constituent types, typeComponents.
+// It also has a field size, which is used by the generator to specify how much space this type takes in memory in
+// a given programming language. This value can be set to 0 by default; it will be recalculated by the generator.
 // If the base type is one of Int, Bool, or None, typeComponents can be nil and should not be accessed.
 // If the base type is Array, typeComponents must be of length 1 and contain the type that the array holds.
 // If the base type is Record, typeComponents must be of length 1 or greater.
@@ -43,11 +45,26 @@ type Entry interface {
 type P0Type struct {
 	p0primitive    P0Primitive
 	typeComponents []P0Type
+	size           int
+}
+
+// GetSize returns the currently calculated size of this data type.
+// The generator needs access to this information to allocate space correctly.
+// Recall that the generator is what sets this value; if the generator has not been run, this will likely return 0
+func (p0type *P0Type) GetSize() int {
+	return p0type.size
+}
+
+// SetSize changes the size of the data type.
+// It is used so that the generator can calculate the size of a data type and then assign it to the P0Type struct value.
+// This should only be needed in the generators.
+func (p0type *P0Type) SetSize(size int) {
+	(*p0type).size = size
 }
 
 // This is how Dr. Emil implemented it; a type declaration has no value.
 func (p0type P0Type) GetP0Type() P0Type {
-	return P0Type{None, nil}
+	return P0Type{None, nil, 0}
 }
 
 func (p0type P0Type) GetFieldNames() []string {
@@ -118,6 +135,8 @@ func (p0const P0Const) GetArrayLength() int {
 	return 0
 }
 
+// P0Proc represents a user-defined procedure in P0.
+// It implements Entry so that it can be stored in the symbol table.
 type P0Proc struct {
 	p0type         P0Type
 	parameterNames []string
@@ -199,7 +218,7 @@ func (st *SliceMapSymbolTable) Find(name string) Entry {
 		}
 	}
 	println("Cannot find symbol")
-	return P0Const{P0Type{None, nil}, 0}
+	return P0Const{P0Type{None, nil, 0}, 0}
 }
 
 // OpenScope opens a new (innermost) declaration scope.
@@ -212,4 +231,9 @@ func (st *SliceMapSymbolTable) OpenScope() {
 // The new innermost scope becomes the old second most inner scope.
 func (st *SliceMapSymbolTable) CloseScope() {
 	*st = (*st)[0 : len(*st)-1]
+}
+
+// TopScope returns the top scope, as a map from strings to Entries
+func (st *SliceMapSymbolTable) TopScope() map[string]Entry {
+	return (*st)[0]
 }
