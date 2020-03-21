@@ -76,6 +76,35 @@ func (wg *WasmGenerator) GenLocalVars(sc map[string]Entry, start int) {
 	}
 }
 
-func (wg *WasmGenerator) LoadItem(item Entry) {
+// LoadItem loads an item TODO: how, why, what are all these variables?
+func (wg *WasmGenerator) LoadItem(declaration map[string]Entry) {
 	// TODO: figure out the level of the entry, then load it
+	asVar, isVar := item.(P0Var)
+	if isVar {
+		if asVar.lev == 0 {
+			(*wg).asm = append((*wg).asm, "global get $"+asVar.name)
+		} else if asVar.lev == curlev {
+			(*wg).asm = append((*wg).asm, "local.get $"+asVar.name)
+		} else if asVar.lev == -2 {
+			(*wg).asm = append((*wg).asm, "i32.const "+asVar.adr)
+			(*wg).asm = append((*wg).asm, "i32.load")
+		}
+	} else {
+		asRef, isRef := item.(P0Ref)
+		if isRef {
+			if asRef.lev == -1 {
+				(*wg).asm = append((*wg).asm, "i32.load")
+			} else if x.lev == curlev {
+				(*wg).asm = append((*wg).asm, "i32.local $"+name)
+				(*wg).asm = append((*wg).asm, "i32.load")
+			} else {
+				mark("WASM: ref level!")
+			}
+		} else {
+			asConst, isConst := item.(P0Const)
+			if isConst {
+				(*wg).asm = append((*wg).asm, "i32.const "+string(asConst.value.(int)))
+			}
+		}
+	}
 }
