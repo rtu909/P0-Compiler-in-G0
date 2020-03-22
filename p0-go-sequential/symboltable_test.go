@@ -4,27 +4,40 @@ import "testing"
 
 func TestVariableFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myVar := P0Var{Bool, nil}
+	myVar := &P0Var{&P0Bool{}, "", 0}
 	st.Init()
 	st.NewDecl("potato", myVar)
-	found := st.Find("potato")
-	if found.GetP0Type().p0primitive != Bool {
-		t.Errorf("The type of variable potate was incorrect")
+	foundValue := st.Find("potato")
+	asVar, isVar := foundValue.(*P0Var)
+	if !isVar {
+		t.Errorf("The found declaration was not a variable")
+	}
+	_, isBool := asVar.GetP0Type().(*P0Bool)
+	if !isBool {
+		t.Errorf("The found declaration was not of type bool")
 	}
 }
 
 func TestConstantFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Const{P0Type{Int, nil}, 67}
+	myConst := &P0Const{&P0Int{}, "", 0, 67}
 	st.Init()
 	st.NewDecl("i", myConst)
 	found := st.Find("i")
-	castFound, castOk := found.(P0Const)
-	if !castOk {
+	asConst, isConst := found.(*P0Const)
+	if !isConst {
 		t.Errorf("The declaration couldn't be retrieved as a const")
 	}
-	if castFound.GetP0Type().p0primitive != Int || castFound.GetValue() != 67 {
-		t.Errorf("The type or value of the const was incorrect")
+	_, isInt := asConst.GetP0Type().(*P0Int)
+	if !isInt {
+		t.Errorf("The declaration is not an integer")
+	}
+	valAsInt, valIsInt := asConst.GetValue().(int)
+	if !valIsInt {
+		t.Errorf("Unable to cast the constant value to an integer")
+	}
+	if valAsInt != 67 {
+		t.Errorf("Incorrect value of the constant")
 	}
 }
 
@@ -32,62 +45,70 @@ func TestEmptyFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
 	st.Init()
 	found := st.Find("item")
-	if found.GetP0Type().p0primitive != None {
-		t.Errorf("The type was supposed to be nil, but was %v", found.GetP0Type().p0primitive)
+	asConst, isConst := found.(*P0Const)
+	if !isConst {
+		t.Error("Undeclared value is not given as a const")
 	}
-	foundConst, castOk := found.(P0Const)
-	if !castOk {
-		t.Errorf("A P0Const was expected, but not returned")
+	valAsInt, valIsInt := asConst.GetValue().(int)
+	if !valIsInt {
+		t.Errorf("Unable to cast the constant value to an integer")
 	}
-	if foundConst.GetP0Type().p0primitive != None || foundConst.GetValue() != 0 {
-		t.Errorf("The value was %v, but was expected to be 0", found.GetP0Type().p0primitive)
+	if valAsInt != 0 {
+		t.Errorf("Incorrect value of the constant")
 	}
 }
 
 func TestDeclDroppedOutOfScope(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Var{Int, nil}
+	myVar := &P0Var{&P0Int{}, "", 0}
 	st.Init()
 	st.OpenScope()
-	st.NewDecl("potato", myConst)
+	st.NewDecl("potato", myVar)
 	st.CloseScope()
 	found := st.Find("potato")
-	castFound, castOk := found.(P0Const)
-	if !castOk || castFound.GetP0Type().p0primitive != None || castFound.GetValue() != 0 {
-		t.Errorf("A declaration of type %v, value %v was found, but there should be no variables in scope", castFound.GetP0Type().p0primitive, castFound.value)
+	asConst, isConst := found.(*P0Const)
+	if !isConst {
+		t.Error("A declaration was found, but it was supposed to drop out of scope")
+	}
+	valAsInt, valIsInt := asConst.GetValue().(int)
+	if !valIsInt {
+		t.Error("A declaration was found, but it was supposed to drop out of scope")
+	}
+	if valAsInt != 0 {
+		t.Error("A declaration was found, but it was supposed to drop out of scope")
 	}
 }
 
 func TestOuterDeclarationFound(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst1 := P0Const{P0Type{Int, nil}, 42}
-	myConst2 := P0Const{P0Type{Int, nil}, 68}
+	myConst1 := &P0Const{&P0Int{}, "", 0, 42}
+	myConst2 := &P0Const{&P0Int{}, "", 0, 68}
 	st.Init()
 	st.NewDecl("potato", myConst1)
 	st.OpenScope()
 	st.NewDecl("potato", myConst2)
-	found := st.Find("potato").(P0Const)
-	if found.GetValue() != 68 {
+	found := st.Find("potato").(*P0Const)
+	if found.GetValue().(int) != 68 {
 		t.Errorf("Picked up a value of %v, expect 68", found.value)
 	}
 	st.CloseScope()
-	found = st.Find("potato").(P0Const)
+	found = st.Find("potato").(*P0Const)
 	if found.GetValue() != 42 {
-		t.Errorf("Picked up a value of %v, expected 42", found.value)
+		t.Errorf("Picked up a value of %v, expected 42", found.GetValue())
 	}
 }
 
 func TestFindDeclarationFromInnerLabel(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myConst := P0Const{P0Type{Int, nil}, 42}
+	myConst := &P0Const{&P0Int{}, "", 0, 42}
 	st.Init()
 	st.NewDecl("potato", myConst)
 	st.OpenScope()
-	found, castOk := st.Find("potato").(P0Const)
+	found, castOk := st.Find("potato").(*P0Const)
 	if !castOk {
 		t.Error("Found something of an unexpected type")
 	}
 	if found.GetValue() != 42 {
-		t.Errorf("Found a value of %v, but expected 42", myConst)
+		t.Errorf("Found a value of %v, but expected 42", myConst.GetValue())
 	}
 }
