@@ -108,3 +108,13 @@ func (wg *WasmGenerator) LoadItem(declaration map[string]Entry) {
 		}
 	}
 }
+
+func (WasmGenerator *wg) GenVar(x Entry) {
+	if 0 < x.lev && x.lev < (*wg).currentLevel {
+		mark("WASM: level!")
+	}
+	asRef, isRef := x.(P0Ref)
+	if isRef {
+
+	}
+}

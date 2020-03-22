@@ -11,128 +11,338 @@ type SymbolTable interface {
 	TopScope() map[string]Entry
 }
 
-// P0Primitive is an enumerated type that represents one of the built-in types in P0.
-// It is only meant to represent the base types; composite types are represented in P0Type
-type P0Primitive int
-
-const (
-	Int P0Primitive = iota
-	Bool
-	Record
-	Array
-	None
-)
-
 // Entry represents items that can be put into the SymbolTable.
-// All entries have a type.
+// All entries have a type, name, and level they are declared at.
 type Entry interface {
-	GetP0Type() P0Type
-	GetFieldNames() []string
-	GetValue() interface{}
-	GetArrayLowerBound() int
-	GetArrayLength() int
+	GetP0Type() P0Type // This is the type related to the entry
+	GetName() string   // This is the name of the entry as a string
+	SetName(string)    // The symbol table needs to set the name when it is putting the entry in the table
+	GetLevel() int     // This is the level on the symbol table where the Entry was declared
+	SetLevel(int)      // The generators do some funky stuff with the level of entries, which requires them to modify it
+	GetSize() int      // How many bytes this type takes in storage; the generator will need to calculate this
 }
 
-// P0Type is a representation of composite data types in P0.
-// It consists of the base type, p0primitive, combined with the constituent types, typeComponents.
-// It also has a size, which is used by the generator to specify how much space this type takes in memory in
-// a given programming language. This value can be set to 0 by default; it will be recalculated by the generator.
-// If the base type is one of Int, Bool, or None, typeComponents can be nil and should not be accessed.
-// If the base type is Array, typeComponents must be of length 1 and contain the type that the array holds.
-// If the base type is Record, typeComponents must be of length 1 or greater.
-// The values represent the types of the fields, in the order that they appear in the Record.
-// P0Type implements Entry so that type declarations can be stored in the table.
-type P0Type struct {
-	p0primitive    P0Primitive
-	typeComponents []P0Type
-	size           int
+// P0Type is a representation of types in P0.
+// P0Type implements Entry, since new types can be declared in a P0 program.
+// Because of this, it needs to be possible to store P0Types on the symbol table.
+type P0Type interface {
+	GetP0Type() P0Type // Returns nil, since this itself is a P0Type
+	GetName() string
+	SetName(string)
+	GetLevel() int
+	SetLevel(int)
+	GetSize() int
+	SetSize(int)
 }
 
-// GetSize returns the currently calculated size of this data type.
-// The generator needs access to this information to allocate space correctly.
-// Recall that the generator is what sets this value; if the generator has not been run, this will likely return 0
-func (p0type *P0Type) GetSize() int {
-	return p0type.size
+// Represents the integer type in P0
+type P0Int struct {
+	name  string
+	size  int
+	level int
 }
 
-// SetSize changes the size of the data type.
-// It is used so that the generator can calculate the size of a data type and then assign it to the P0Type struct value.
-// This should only be needed in the generators.
-func (p0type *P0Type) SetSize(size int) {
-	(*p0type).size = size
-}
-
-// This is how Dr. Emil implemented it; a type declaration has no value.
-func (p0type P0Type) GetP0Type() P0Type {
-	return P0Type{None, nil, 0}
-}
-
-func (p0type P0Type) GetFieldNames() []string {
+func (p0int *P0Int) GetP0Type() P0Type {
 	return nil
 }
 
-// The value of a type declaration is the type
-func (p0type P0Type) GetValue() interface{} {
-	return p0type
+func (p0int *P0Int) GetName() string {
+	return p0int.name
 }
 
-func (p0type P0Type) GetArrayLowerBound() int {
-	return 0
+func (p0int *P0Int) SetName(newName string) {
+	p0int.name = newName
 }
 
-func (p0type P0Type) GetArrayLength() int {
-	return 0
+func (p0int *P0Int) GetLevel() int {
+	return p0int.level
+}
+
+func (p0int *P0Int) SetLevel(newLevel int) {
+	p0int.level = newLevel
+}
+
+func (p0int *P0Int) GetSize() int {
+	return p0int.size
+}
+
+func (p0int *P0Int) SetSize(newSize int) {
+	p0int.size = newSize
+}
+
+// Represents the boolean type in P0
+type P0Bool struct {
+	name  string
+	size  int
+	level int
+}
+
+func (p0bool *P0Bool) GetP0Type() P0Type {
+	return nil
+}
+
+func (p0bool *P0Bool) GetName() string {
+	return p0bool.name
+}
+
+func (p0bool *P0Bool) SetName(newName string) {
+	p0bool.name = newName
+}
+
+func (p0bool *P0Bool) GetLevel() int {
+	return p0bool.level
+}
+
+func (p0bool *P0Bool) SetLevel(newLevel int) {
+	p0bool.level = newLevel
+}
+
+func (p0bool *P0Bool) GetSize() int {
+	return p0bool.size
+}
+
+func (p0bool *P0Bool) SetSize(newSize int) {
+	p0bool.size = newSize
+}
+
+// Represents the enum type in P0
+type P0Enum struct {
+	name  string
+	size  int
+	level int
+}
+
+func (p0enum *P0Enum) GetP0Type() P0Type {
+	return nil
+}
+
+func (p0enum *P0Enum) GetName() string {
+	return p0enum.name
+}
+
+func (p0enum *P0Enum) SetName(newName string) {
+	p0enum.name = newName
+}
+
+func (p0enum *P0Enum) GetLevel() int {
+	return p0enum.level
+}
+
+func (p0enum *P0Enum) SetLevel(newLevel int) {
+	p0enum.level = newLevel
+}
+
+func (p0enum *P0Enum) GetSize() int {
+	return p0enum.size
+}
+
+func (p0enum *P0Enum) SetSize(newSize int) {
+	p0enum.size = newSize
+}
+
+// P0Record represents declared record types in P0
+type P0Record struct {
+	name   string
+	size   int
+	level  int
+	fields []P0Type
+}
+
+func (p0record *P0Record) GetP0Type() P0Type {
+	return nil
+}
+
+func (p0record *P0Record) GetName() string {
+	return p0record.name
+}
+
+func (p0record *P0Record) SetName(newName string) {
+	p0record.name = newName
+}
+
+func (p0record *P0Record) GetLevel() int {
+	return (*p0record).level
+}
+
+func (p0record *P0Record) SetLevel(newLevel int) {
+	(*p0record).level = newLevel
+}
+
+func (p0record *P0Record) GetSize() int {
+	return (*p0record).size
+}
+
+func (p0record *P0Record) SetSize(newSize int) {
+	(*p0record).size = newSize
+}
+
+func (p0record *P0Record) GetFields() []P0Type {
+	return (*p0record).fields
+}
+
+type P0Array struct {
+	name   string
+	size   int
+	level  int
+	base   P0Type
+	lower  int // The lowest index that you can reference the array by
+	length int // The number of items in the array
+}
+
+func (p0array *P0Array) GetP0Type() P0Type {
+	return nil
+}
+
+func (p0array *P0Array) GetName() string {
+	return p0array.name
+}
+
+func (p0array *P0Array) SetName(newName string) {
+	(*p0array).name = newName
+}
+
+func (p0array *P0Array) GetLevel() int {
+	return (*p0array).level
+}
+
+func (p0array *P0Array) SetLevel(newLevel int) {
+	(*p0array).level = newLevel
+}
+
+func (p0array *P0Array) GetSize() int {
+	return (*p0array).size
+}
+
+func (p0array *P0Array) SetSize(newSize int) {
+	(*p0array).size = newSize
+}
+
+// GetArray gets the length of the array (number of elements in the array).
+func (p0array *P0Array) GetLength() int {
+	return (*p0array).length
+}
+
+// GetLowerBound gets the number that can be used to address the first element in the array.
+func (p0array *P0Array) GetLowerBound() int {
+	return (*p0array).lower
+}
+
+// GetElementType gets the type of the elements that the array contains.
+func (p0array *P0Array) GetElementType() P0Type {
+	return (*p0array).base
 }
 
 // P0Var represents an entry in the symbol table for a P0 variable
-// It implements the Entry interface so that it can be stored in the symbol table, although most of the functions aren't relevant
-type P0Var P0Type
-
-func (p0var P0Var) GetP0Type() P0Type {
-	return P0Type(p0var)
-}
-
-func (p0var P0Var) GetFieldNames() []string {
-	return nil
-}
-
-func (p0var P0Var) GetValue() interface{} {
-	return nil
-}
-
-func (p0var P0Var) GetArrayLowerBound() int {
-	return 0
-}
-
-func (p0var P0Var) GetArrayLength() int {
-	return 0
-}
-
-// P0Const represents an identifier that is linked to a constant value.
 // It implements the Entry interface so that it can be stored in the symbol table
+type P0Var struct {
+	p0type P0Type
+	name   string
+	level  int
+}
+
+func (p0var *P0Var) GetP0Type() P0Type {
+	return p0var.p0type
+}
+
+func (p0var *P0Var) GetName() string {
+	return p0var.name
+}
+
+func (p0var *P0Var) SetName(newName string) {
+	(*p0var).name = newName
+}
+
+func (p0var *P0Var) GetSize() int {
+	return p0var.p0type.GetSize()
+}
+
+func (p0var *P0Var) SetSize(newSize int) {
+	print("Changing stored size of variable directly instead of changing size of underlying type; probably bad")
+	p0var.GetP0Type().SetSize(newSize)
+}
+
+func (p0var *P0Var) GetLevel() int {
+	return p0var.level
+}
+
+func (p0var *P0Var) SetLevel(newLevel int) {
+	(*p0var).level = newLevel
+}
+
+// P0Ref represents an entry in the symbol table for a reference (pointer-like construct) in P0.
+// It implements the Entry interface so that it can be stored in the symbol table
+type P0Ref struct {
+	p0type P0Type
+	name   string
+	level  int
+}
+
+func (p0ref *P0Ref) GetP0Type() P0Type {
+	return p0ref.p0type
+}
+
+func (p0ref *P0Ref) GetName() string {
+	return p0ref.name
+}
+
+func (p0ref *P0Ref) SetName(newName string) {
+	(*p0ref).name = newName
+}
+
+func (p0ref *P0Ref) GetSize() int {
+	return p0ref.p0type.GetSize()
+}
+
+func (p0ref *P0Ref) SetSize(newSize int) {
+	print("Changing stored size of variable directly instead of changing size of underlying type; probably bad")
+	p0ref.GetP0Type().SetSize(newSize)
+}
+
+func (p0ref *P0Ref) GetLevel() int {
+	return p0ref.level
+}
+
+func (p0ref *P0Ref) SetLevel(newLevel int) {
+	(*p0ref).level = newLevel
+}
+
+// P0Const represents an entry in the symbol table for a P0 constant
+// It implements the Entry interface so that it can be stored in the symbol table.
+// On top of all the information that's necessary for storing it in the symbol table, it stores the associated constant value, as an empty interface type.
 type P0Const struct {
 	p0type P0Type
+	name   string
+	level  int
 	value  interface{}
 }
 
-func (p0const P0Const) GetP0Type() P0Type {
+func (p0const *P0Const) GetP0Type() P0Type {
 	return p0const.p0type
 }
 
-func (p0const P0Const) GetFieldNames() []string {
-	return nil
+func (p0const *P0Const) GetName() string {
+	return p0const.name
 }
 
-func (p0const P0Const) GetValue() interface{} {
-	return p0const.value
+func (p0const *P0Const) SetName(newName string) {
+	(*p0const).name = newName
 }
 
-func (p0const P0Const) GetArrayLowerBound() int {
-	return 0
+func (p0const *P0Const) GetSize() int {
+	return p0const.p0type.GetSize()
 }
 
-func (p0const P0Const) GetArrayLength() int {
-	return 0
+func (p0const *P0Const) SetSize(newSize int) {
+	print("Changing stored size of constant directly instead of changing size of underlying type; probably bad")
+	p0const.GetP0Type().SetSize(newSize)
+}
+
+func (p0const *P0Const) GetLevel() int {
+	return p0const.level
+}
+
+func (p0const *P0Const) SetLevel(newLevel int) {
+	(*p0const).level = newLevel
 }
 
 // P0Proc represents a user-defined procedure in P0.
@@ -142,23 +352,23 @@ type P0Proc struct {
 	parameterNames []string
 }
 
-func (p0proc P0Proc) GetP0Type() P0Type {
+func (p0proc *P0Proc) GetP0Type() P0Type {
 	return p0proc.p0type
 }
 
-func (p0proc P0Proc) GetFieldNames() []string {
+func (p0proc *P0Proc) GetFieldNames() []string {
 	return p0proc.parameterNames
 }
 
-func (p0proc P0Proc) GetValue() interface{} {
+func (p0proc *P0Proc) GetValue() interface{} {
 	return nil
 }
 
-func (p0proc P0Proc) GetArrayLowerBound() int {
+func (p0proc *P0Proc) GetArrayLowerBound() int {
 	return 0
 }
 
-func (p0proc P0Proc) GetArrayLength() int {
+func (p0proc *P0Proc) GetArrayLength() int {
 	return 0
 }
 
@@ -168,23 +378,23 @@ type P0StdProc struct {
 	parameterNames []string
 }
 
-func (p0proc P0StdProc) GetP0Type() P0Type {
+func (p0proc *P0StdProc) GetP0Type() P0Type {
 	return p0proc.p0type
 }
 
-func (p0proc P0StdProc) GetFieldNames() []string {
+func (p0proc *P0StdProc) GetFieldNames() []string {
 	return p0proc.parameterNames
 }
 
-func (p0proc P0StdProc) GetValue() interface{} {
+func (p0proc *P0StdProc) GetValue() interface{} {
 	return nil
 }
 
-func (p0proc P0StdProc) GetArrayLowerBound() int {
+func (p0proc *P0StdProc) GetArrayLowerBound() int {
 	return 0
 }
 
-func (p0proc P0StdProc) GetArrayLength() int {
+func (p0proc *P0StdProc) GetArrayLength() int {
 	return 0
 }
 
@@ -201,9 +411,11 @@ func (st *SliceMapSymbolTable) Init() {
 func (st *SliceMapSymbolTable) NewDecl(name string, entry Entry) {
 	_, present := (*st)[len(*st)-1][name]
 	if !present {
+		entry.SetName(name)
+		entry.SetLevel(len(*st) - 1)
 		(*st)[len(*st)-1][name] = entry
 	} else {
-		println("Multiple definition")
+		mark("Multiple definition of " + name)
 	}
 }
 
@@ -217,8 +429,8 @@ func (st *SliceMapSymbolTable) Find(name string) Entry {
 			return entry
 		}
 	}
-	println("Cannot find symbol")
-	return P0Const{P0Type{None, nil, 0}, 0}
+	mark("Cannot find symbol " + name)
+	return &P0Const{&P0Int{"int", 0, 0}, "error", 0, 0}
 }
 
 // OpenScope opens a new (innermost) declaration scope.
