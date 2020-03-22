@@ -345,6 +345,10 @@ func (p0const *P0Const) SetLevel(newLevel int) {
 	(*p0const).level = newLevel
 }
 
+func (p0const *P0Const) GetValue() interface{} {
+	return p0const.value
+}
+
 // P0Proc represents a user-defined procedure in P0.
 // It implements Entry so that it can be stored in the symbol table.
 type P0Proc struct {
