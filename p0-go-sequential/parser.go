@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"os"
-	"runtime"
 	"strings"
 )
 

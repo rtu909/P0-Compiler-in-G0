@@ -99,12 +99,12 @@ func number() {
 	for "0" <= ch && ch <= "9" {
 		var tempVal int
 		tempVal, _ = strconv.Atoi(ch)
-		val = tempVal + 10 * val.(int) //weird stuff, check this
+		val = tempVal + 10*val.(int) //weird stuff, check this
 		getChar()
 	}
 	fmt.Println(int(math.Pow(2, 31)))
 	fmt.Println(val.(int))
-	if val.(int) >= int(math.Pow(2, 31)){
+	if val.(int) >= int(math.Pow(2, 31)) {
 		mark("number too large")
 		val = 0
 	}
@@ -121,7 +121,7 @@ func identKW() {
 	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
 		getChar()
 	}
-	val = source[start : index] //originally -1
+	val = source[start:index] //originally -1
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
 	fmt.Println(sym)
@@ -145,64 +145,82 @@ func comment() {
 
 //recognizes the next symbol and assigns it to the variables sym and val
 func getSym() {
-	for (string(0) < ch) && (ch <= " "){
+	for (string(0) < ch) && (ch <= " ") {
 		getChar()
 	}
-	if ("A" <= ch) && (ch <= "Z") || ("a" <= ch) && (ch <= "z"){
+	if ("A" <= ch) && (ch <= "Z") || ("a" <= ch) && (ch <= "z") {
 		identKW()
-	} else if ("0" <= ch) && (ch <= "9"){
+	} else if ("0" <= ch) && (ch <= "9") {
 		number()
-	} else if (ch == "{"){
-		comment(); getSym()
-	} else if (ch == "*"){
-		getChar(); sym = TIMES
-	} else if (ch == "+"){
-		getChar(); sym = PLUS
-	} else if (ch == "-"){
-		getChar(); sym = MINUS
-	} else if (ch == "="){
-		getChar(); sym = EQ
-	} else if (ch == "<"){
+	} else if ch == "{" {
+		comment()
+		getSym()
+	} else if ch == "*" {
 		getChar()
-		if (ch == "="){
-			getChar(); sym = LE
-		} else if (ch == ">"){
-			getChar(); sym = NE
+		sym = TIMES
+	} else if ch == "+" {
+		getChar()
+		sym = PLUS
+	} else if ch == "-" {
+		getChar()
+		sym = MINUS
+	} else if ch == "=" {
+		getChar()
+		sym = EQ
+	} else if ch == "<" {
+		getChar()
+		if ch == "=" {
+			getChar()
+			sym = LE
+		} else if ch == ">" {
+			getChar()
+			sym = NE
 		} else {
 			sym = LT
 		}
-	} else if (ch == ">"){
+	} else if ch == ">" {
 		getChar()
-		if (ch == "="){
-			getChar(); sym = GE
+		if ch == "=" {
+			getChar()
+			sym = GE
 		} else {
 			sym = GT
 		}
-	} else if (ch == ";"){
-		getChar(); sym = SEMICOLON
-	} else if (ch == ","){
-		getChar(); sym = COMMA
-	} else if (ch == ":"){
+	} else if ch == ";" {
 		getChar()
-		if (ch == "="){
-			getChar(); sym = BECOMES
+		sym = SEMICOLON
+	} else if ch == "," {
+		getChar()
+		sym = COMMA
+	} else if ch == ":" {
+		getChar()
+		if ch == "=" {
+			getChar()
+			sym = BECOMES
 		} else {
 			sym = COLON
 		}
-	} else if (ch == "."){
-		getChar(); sym = PERIOD; fmt.Println("period")
-	} else if (ch == "("){
-		getChar(); sym = LPAREN; fmt.Println("parentheses")
-	} else if (ch == ")"){
-		getChar(); sym = RPAREN
-	} else if (ch == "["){
-		getChar(); sym = LBRAK
-	} else if (ch == "]") {
-		getChar();
+	} else if ch == "." {
+		getChar()
+		sym = PERIOD
+		fmt.Println("period")
+	} else if ch == "(" {
+		getChar()
+		sym = LPAREN
+		fmt.Println("parentheses")
+	} else if ch == ")" {
+		getChar()
+		sym = RPAREN
+	} else if ch == "[" {
+		getChar()
+		sym = LBRAK
+	} else if ch == "]" {
+		getChar()
 		sym = RBRAK
-	} else if (ch == string(0)){
-		getChar(); sym = EOF
-	} else{
+	} else if ch == string(0) {
+		getChar()
+		sym = EOF
+	} else {
 		mark("illegal character")
 		getChar()
 		sym = 0
