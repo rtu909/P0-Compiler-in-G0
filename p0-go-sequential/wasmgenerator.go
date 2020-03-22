@@ -27,13 +27,8 @@ func (wg *WasmGenerator) GenInt(p0Type P0Type) P0Type {
 	return p0Type
 }
 
-func (wg *WasmGenerator) GenRecord(p0Type P0Type) P0Type {
-	s := 0
-	for _, field := range p0Type.typeComponents {
-		s += field.GetSize()
-	}
-	p0Type.SetSize(s)
-	return p0Type
+func (wg *WasmGenerator) GenRecord(p0Type P0Record) P0Type {
+	// TODO:
 }
 
 func (wg *WasmGenerator) GenArray(p0Type P0Type) P0Type {

@@ -349,57 +349,90 @@ func (p0const *P0Const) GetValue() interface{} {
 	return p0const.value
 }
 
-// P0Proc represents a user-defined procedure in P0.
-// It implements Entry so that it can be stored in the symbol table.
+// P0Proc represents a user-declared procedure in a P0 program.
+// It implements Entry so it can be stored on the symbol table.
+// It also has methods for accessing the list of parameters that need to be passed.
 type P0Proc struct {
-	p0type         P0Type
-	parameterNames []string
+	p0type     P0Type
+	name       string
+	level      int
+	parameters []P0Type
 }
 
 func (p0proc *P0Proc) GetP0Type() P0Type {
-	return p0proc.p0type
-}
-
-func (p0proc *P0Proc) GetFieldNames() []string {
-	return p0proc.parameterNames
-}
-
-func (p0proc *P0Proc) GetValue() interface{} {
 	return nil
 }
 
-func (p0proc *P0Proc) GetArrayLowerBound() int {
+func (p0proc *P0Proc) GetName() string {
+	return p0proc.name
+}
+
+func (p0proc *P0Proc) SetName(newName string) {
+	p0proc.name = newName
+}
+
+// TODO: probably don't need?
+func (*P0Proc) GetSize() int {
 	return 0
 }
 
-func (p0proc *P0Proc) GetArrayLength() int {
-	return 0
+// TODO: probably also don't need?
+func (*P0Proc) SetSize(int) {
 }
 
-// P0StdProc is used to represent standard library procedures in the SymbolTable
+func (p0proc *P0Proc) GetLevel() int {
+	return p0proc.level
+}
+
+func (p0proc *P0Proc) SetLevel(newLevel int) {
+	p0proc.level = newLevel
+}
+
+func (p0proc *P0Proc) GetParameters() []P0Type {
+	return p0proc.parameters
+}
+
+// P0Proc represents a user-declared procedure in a P0 program.
+// It implements Entry so it can be stored on the symbol table.
+// It also has methods for accessing the list of parameters that need to be passed.
 type P0StdProc struct {
-	p0type         P0Type
-	parameterNames []string
+	p0type     P0Type
+	name       string
+	level      int
+	parameters []P0Type
 }
 
-func (p0proc *P0StdProc) GetP0Type() P0Type {
-	return p0proc.p0type
-}
-
-func (p0proc *P0StdProc) GetFieldNames() []string {
-	return p0proc.parameterNames
-}
-
-func (p0proc *P0StdProc) GetValue() interface{} {
+func (p0stdproc *P0StdProc) GetP0Type() P0Type {
 	return nil
 }
 
-func (p0proc *P0StdProc) GetArrayLowerBound() int {
+func (p0stdproc *P0StdProc) GetName() string {
+	return p0stdproc.name
+}
+
+func (p0stdproc *P0StdProc) SetName(newName string) {
+	p0stdproc.name = newName
+}
+
+// TODO: probably don't need?
+func (*P0StdProc) GetSize() int {
 	return 0
 }
 
-func (p0proc *P0StdProc) GetArrayLength() int {
-	return 0
+// TODO: probably also don't need?
+func (*P0StdProc) SetSize(int) {
+}
+
+func (p0stdproc *P0StdProc) GetLevel() int {
+	return p0stdproc.level
+}
+
+func (p0stdproc *P0StdProc) SetLevel(newLevel int) {
+	p0stdproc.level = newLevel
+}
+
+func (p0stdproc *P0StdProc) GetParameters() []P0Type {
+	return p0stdproc.parameters
 }
 
 // SliceMapSymbolTable implements the symbol table as a slice of maps from string to Entry
