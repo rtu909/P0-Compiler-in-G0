@@ -171,6 +171,121 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 	return entry
 }
 
-//func (wg *WasmGenerator) GenBinaryOP(op int, x Entry, y Entry) Entry {
-//
-//}
+func (wg *WasmGenerator) GenBinaryOP(op int, x Entry, y Entry) Entry {
+	switch op {
+	case PLUS:
+	case MINUS:
+	case TIMES:
+	case DIV:
+	case MOD:
+		wg.LoadItem(x)
+		wg.LoadItem(y)
+		switch op {
+		case PLUS:
+			wg.asm = append(wg.asm, "i32.add")
+			break
+		case MINUS:
+			wg.asm = append(wg.asm, "i32.sub")
+			break
+		case TIMES:
+			wg.asm = append(wg.asm, "i32.mul")
+			break
+		case DIV:
+			wg.asm = append(wg.asm, "i32.div_s")
+			break
+		case MOD:
+			wg.asm = append(wg.asm, "i32.rem_s")
+			break
+		}
+		x = &P0Var{&P0Int{}, "", -1}
+		break
+	case AND:
+		wg.LoadItem(y)
+		wg.asm = append(wg.asm, "else")
+		wg.asm = append(wg.asm, "i32.const 0")
+		wg.asm = append(wg.asm, "end")
+		x = &P0Var{&P0Bool{}, "", -1}
+		break
+	case OR:
+		// x should already be on the stack b/c magic
+		wg.LoadItem(y)
+		wg.asm = append(wg.asm, "end")
+		x = &P0Var{&P0Bool{}, "", -1}
+		break
+	default:
+		panic("Unrecognized binary operator")
+	}
+	return x
+}
+
+func (wg *WasmGenerator) GenRelation(op int, x Entry, y Entry) Entry {
+	wg.LoadItem(x)
+	wg.LoadItem(y)
+	switch op {
+	case EQ:
+		wg.asm = append(wg.asm, "i32.eq")
+		break
+	case NE:
+		wg.asm = append(wg.asm, "i32.ne")
+		break
+	case LT:
+		wg.asm = append(wg.asm, "i32.lt_s")
+		break
+	case GT:
+		wg.asm = append(wg.asm, "i32.gt_s")
+		break
+	case LE:
+		wg.asm = append(wg.asm, "i32.le_s")
+		break
+	case GE:
+		wg.asm = append(wg.asm, "i32.ge_s")
+		break
+	default:
+		panic("Unrecognized relational operator")
+	}
+	x = &P0Var{&P0Bool{}, "", -1}
+	return x
+}
+
+// Assuming x is a Record and f is a field of x
+func (wg *WasmGenerator) GenSelect(x Entry, f Entry) Entry {
+	asVar, isVar := x.(*P0Var)
+	if isVar {
+		// TODO: x.SetAddress(x.GetAddress() + f.GetOffset())
+		asVar.p0type = f.GetP0Type()
+		return asVar
+	} else {
+		asRef, isRef := x.(*P0Ref)
+		if isRef {
+			if x.GetLevel() > 0 {
+				wg.asm = append(wg.asm, "local.get $"+x.GetName())
+			}
+			wg.asm = append(wg.asm, "i32.const " /* TODO: + f.GetOffset()*/)
+			wg.asm = append(wg.asm, "i32.add")
+			asRef.SetLevel(-1)
+			asRef.p0type = f.GetP0Type()
+			return asRef
+		}
+	}
+	panic("Should only call with variable of reference")
+}
+
+func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
+	xAsVar, xIsVar := x.(*P0Var)
+	arrayType := x.GetP0Type().(*P0Array)
+	if xIsVar {
+		yAsConst, yIsConst := y.(*P0Const)
+		if yIsConst {
+			// TODO:
+			// x.SetAddress(x.GetAddress() +
+			// (yAsConst.GetValue() - arrayType.GetElementType().GetLowerBound()) *
+			// arrayType.GetElementType().GetSize())
+			xAsVar.p0type = xAsVar.GetP0Type().(*P0Array).GetElementType()
+			return xAsVar
+		} else {
+			wg.LoadItem(y)
+			//if x.GetP0Type()
+			// TODO: This is where I left off
+		}
+	}
+}

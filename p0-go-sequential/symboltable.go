@@ -13,6 +13,10 @@ type SymbolTable interface {
 
 // Entry represents items that can be put into the SymbolTable.
 // All entries have a type, name, and level they are declared at.
+// TODO: add methods for:
+//  * adr
+//  * reg
+//  * offset
 type Entry interface {
 	GetP0Type() P0Type // This is the type related to the entry
 	GetName() string   // This is the name of the entry as a string
