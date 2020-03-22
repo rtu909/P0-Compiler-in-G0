@@ -27,29 +27,41 @@ func (wg *WasmGenerator) GenInt(p0Type P0Type) P0Type {
 	return p0Type
 }
 
-func (wg *WasmGenerator) GenRecord(p0Type P0Record) P0Type {
-	// TODO:
+func (wg *WasmGenerator) GenRecord(p0Type P0Type) P0Type {
+	p0record := p0Type.(*P0Record)
+	var sum int = 0
+	for _, param := range p0record.GetFields() {
+		sum += param.GetSize()
+	}
+	p0record.SetSize(sum)
+	return p0record
 }
 
 func (wg *WasmGenerator) GenArray(p0Type P0Type) P0Type {
-	p0Type.SetSize(p0Type.typeComponents[0].GetSize() * p0Type.GetArrayLength())
-	return p0Type
+	p0array := p0Type.(*P0Array)
+	p0array.SetSize(p0array.GetElementType().GetSize() * p0array.GetLength())
+	return p0array
 }
 
 // GenGlobalVars creates the code for declaring the global variables at the start of the file.
 // sc is a map of names to types. It represents all the global variable declarations.
 // start Represents TODO:
 func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
-	for declName, entry := range sc {
-		_, isVar := entry.(P0Var)
+	for _, entry := range sc {
+		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			if entry.GetP0Type().p0primitive == Int || entry.GetP0Type().p0primitive == Bool {
+			switch t := asVar.GetP0Type().(type) {
+			case *P0Bool:
+			case *P0Int:
 				(*wg).asm = append((*wg).asm, "(global $"+declName+" (mut i32) i32.const 0)")
-			} else if entry.GetP0Type().p0primitive == Array || entry.GetP0Type().p0primitive == Record {
-				// TODO: a bunch of new instance variables are added to the entry in the original code, but I haven't
-				// added them to the entry yet, so we can't assign them. Also don't understand how they are used.
-				(*wg).memorySize += entry.GetP0Type().GetSize()
-			} else {
+				break
+			case *P0Array:
+			case *P0Record:
+				// TODO: need to add an adr instance variable to the declaration
+				asVar.SetLevel(-2)
+				wg.memorySize += entry.GetP0Type().GetSize()
+				break
+			default:
 				mark("WASM type?")
 			}
 		}
@@ -58,58 +70,107 @@ func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
 
 func (wg *WasmGenerator) GenLocalVars(sc map[string]Entry, start int) {
 	for declName, entry := range sc {
-		_, isVar := entry.(P0Var)
+		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			if entry.GetP0Type().p0primitive == Int || entry.GetP0Type().p0primitive == Bool {
+			switch t := asVar.GetP0Type().(type) {
+			case *P0Int:
+			case *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+declName+" i32)")
-			} else if entry.GetP0Type().p0primitive == Record || entry.GetP0Type().p0primitive == Array {
+				break
+			case *P0Array:
+			case *P0Record:
 				mark("WASM: no local arrays, records")
-			} else {
+				break
+			default:
 				mark("WASM type?")
 			}
 		}
 	}
 }
 
-// LoadItem loads an item TODO: how, why, what are all these variables?
-func (wg *WasmGenerator) LoadItem(declaration map[string]Entry) {
-	// TODO: figure out the level of the entry, then load it
-	asVar, isVar := item.(P0Var)
+func (wg *WasmGenerator) LoadItem(entry Entry) {
+	asVar, isVar := entry.(*P0Var)
 	if isVar {
-		if asVar.lev == 0 {
-			(*wg).asm = append((*wg).asm, "global get $"+asVar.name)
-		} else if asVar.lev == curlev {
-			(*wg).asm = append((*wg).asm, "local.get $"+asVar.name)
-		} else if asVar.lev == -2 {
-			(*wg).asm = append((*wg).asm, "i32.const "+asVar.adr)
-			(*wg).asm = append((*wg).asm, "i32.load")
+		if asVar.GetLevel() == 0 {
+			wg.asm = append(wg.asm, "global get $"+asVar.GetName())
+		} else if asVar.GetLevel() == wg.currentLevel {
+			wg.asm = append(wg.asm, "local.get $"+asVar.GetName())
+		} else if asVar.GetLevel() == -2 {
+			wg.asm = append(wg.asm, "i32.const "+asVar.adr) // TODO:
+			wg.asm = append(wg.asm, "i32.load")
 		}
 	} else {
-		asRef, isRef := item.(P0Ref)
+		asRef, isRef := entry.(*P0Ref)
 		if isRef {
-			if asRef.lev == -1 {
-				(*wg).asm = append((*wg).asm, "i32.load")
+			if asRef.GetLevel() == -1 {
+				wg.asm = append(wg.asm, "i32.load")
 			} else if x.lev == curlev {
-				(*wg).asm = append((*wg).asm, "i32.local $"+name)
-				(*wg).asm = append((*wg).asm, "i32.load")
+				wg.asm = append(wg.asm, "i32.local $"+asRef.GetName())
+				wg.asm = append(wg.asm, "i32.load")
 			} else {
 				mark("WASM: ref level!")
 			}
 		} else {
-			asConst, isConst := item.(P0Const)
+			asConst, isConst := entry.(*P0Const)
 			if isConst {
-				(*wg).asm = append((*wg).asm, "i32.const "+string(asConst.value.(int)))
+				wg.asm = append(wg.asm, "i32.const "+string(asConst.GetValue().(int)))
 			}
 		}
 	}
 }
 
-func (WasmGenerator *wg) GenVar(x Entry) {
-	if 0 < x.lev && x.lev < (*wg).currentLevel {
+func (wg *WasmGenerator) GenVar(entry Entry) Entry {
+	if 0 < entry.GetLevel() && entry.GetLevel() < wg.currentLevel {
 		mark("WASM: level!")
 	}
-	asRef, isRef := x.(P0Ref)
+	var newEntry Entry
+	_, isRef := entry.(*P0Ref)
 	if isRef {
-
+		newEntry = &P0Ref{entry.GetP0Type(), entry.GetName(), entry.GetLevel()}
+	} else {
+		_, isVar := entry.(*P0Var)
+		if isVar {
+			newEntry = &P0Var{entry.GetP0Type(), entry.GetName(), entry.GetLevel()}
+			if entry.GetLevel() == -2 {
+				// TODO: copy the address of the old entry to the new entry
+			}
+		}
 	}
+	return newEntry
 }
+
+func (wg *WasmGenerator) GenConst(entry Entry) Entry {
+	return entry
+}
+
+func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
+	wg.LoadItem(entry)
+	switch op {
+	case MINUS:
+		wg.asm = append(wg.asm, "i32.const -1")
+		wg.asm = append(wg.asm, "i32.mul")
+		entry = &P0Var{&P0Int{}, "", -1} // WHY? I don't know why this is done
+		break
+	case NOT:
+		wg.asm = append(wg.asm, "i32.eqz")
+		entry = &P0Var{&P0Bool{}, "", -1}
+		break
+	case AND:
+		wg.asm = append(wg.asm, "if (result i32)")
+		entry = &P0Var{&P0Bool{}, "", -1}
+		break
+	case OR:
+		wg.asm = append(wg.asm, "if (result i32)")
+		wg.asm = append(wg.asm, "i32.const 1")
+		wg.asm = append(wg.asm, "else")
+		entry = &P0Var{&P0Bool{}, "", -1}
+		break
+	default:
+		mark("WASM: unary operator?")
+	}
+	return entry
+}
+
+//func (wg *WasmGenerator) GenBinaryOP(op int, x Entry, y Entry) Entry {
+//
+//}
