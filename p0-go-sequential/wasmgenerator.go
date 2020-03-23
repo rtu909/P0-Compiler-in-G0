@@ -50,10 +50,10 @@ func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			switch t := asVar.GetP0Type().(type) {
+			switch _ := asVar.GetP0Type().(type) {
 			case *P0Bool:
 			case *P0Int:
-				(*wg).asm = append((*wg).asm, "(global $"+declName+" (mut i32) i32.const 0)")
+				(*wg).asm = append((*wg).asm, "(global $"+entry.GetName()+" (mut i32) i32.const 0)")
 				break
 			case *P0Array:
 			case *P0Record:
@@ -72,7 +72,7 @@ func (wg *WasmGenerator) GenLocalVars(sc map[string]Entry, start int) {
 	for declName, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			switch t := asVar.GetP0Type().(type) {
+			switch _ := asVar.GetP0Type().(type) {
 			case *P0Int:
 			case *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+declName+" i32)")
@@ -96,7 +96,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) {
 		} else if asVar.GetLevel() == wg.currentLevel {
 			wg.asm = append(wg.asm, "local.get $"+asVar.GetName())
 		} else if asVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+asVar.adr) // TODO:
+			wg.asm = append(wg.asm, "i32.const " /* TODO: +asVar.GetAddress() */)
 			wg.asm = append(wg.asm, "i32.load")
 		}
 	} else {
@@ -104,7 +104,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) {
 		if isRef {
 			if asRef.GetLevel() == -1 {
 				wg.asm = append(wg.asm, "i32.load")
-			} else if x.lev == curlev {
+			} else if entry.GetLevel() == wg.currentLevel {
 				wg.asm = append(wg.asm, "i32.local $"+asRef.GetName())
 				wg.asm = append(wg.asm, "i32.load")
 			} else {
@@ -284,8 +284,76 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 			return xAsVar
 		} else {
 			wg.LoadItem(y)
-			//if x.GetP0Type()
-			// TODO: This is where I left off
+			if arrayType.GetLowerBound() != 0 {
+				wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+				wg.asm = append(wg.asm, "i32.sub")
+			}
+			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+			wg.asm = append(wg.asm, "i32.mul")
+			wg.asm = append(wg.asm, "i32.const " /* TODO: + string(x.GetAddress()) */)
+			wg.asm = append(wg.asm, "i32.add")
+			x = &P0Ref{arrayType.GetElementType(), "", -1}
 		}
+	} else {
+		if x.GetLevel() == wg.currentLevel {
+			wg.LoadItem(x)
+			x.SetLevel(-1)
+		}
+		yAsConst, yIsConst := y.(*P0Const)
+		if yIsConst {
+			wg.asm = append(wg.asm, "i32.const "+
+				string((yAsConst.GetValue().(int)-arrayType.GetLowerBound())*arrayType.GetElementType().GetSize()))
+			wg.asm = append(wg.asm, "i32.add")
+		} else {
+			wg.LoadItem(y)
+			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.sub")
+			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+			wg.asm = append(wg.asm, "i32.mul")
+			wg.asm = append(wg.asm, "i32.add")
+		}
+		x = &P0Ref{arrayType.GetElementType(), x.GetName(), x.GetLevel()}
 	}
+	return x
+}
+
+func (wg *WasmGenerator) GenAssign(x, y Entry) {
+	xAsVar, xIsVar := x.(*P0Var)
+	xAsRef, xIsRef := x.(*P0Ref)
+	if xIsVar {
+		if xAsVar.GetLevel() == -2 {
+			wg.asm = append(wg.asm, "i32.const " /* TODO: x.GetAddress()*/)
+		}
+		wg.LoadItem(y)
+		if xAsVar.GetLevel() == 0 {
+			wg.asm = append(wg.asm, "global.set $"+x.GetName())
+		} else if xAsVar.GetLevel() == wg.currentLevel {
+			wg.asm = append(wg.asm, "local.set $"+x.GetName())
+		} else if xAsVar.GetLevel() == -2 {
+			wg.asm = append(wg.asm, "i32.store")
+		} else {
+			mark("WASM: level!")
+		}
+	} else if xIsRef {
+		if xAsRef.GetLevel() == wg.currentLevel {
+			wg.asm = append(wg.asm, "local.get $"+x.GetName())
+		}
+		wg.LoadItem(y)
+		wg.asm = append(wg.asm, "i32.store")
+	} else {
+		panic("The generator was passed code to assign to an unchangeable value")
+	}
+}
+
+func (wg *WasmGenerator) GenProgEntry() { // NOTE: originally had an unused parameter `ident`
+	wg.asm = append(wg.asm, "(func $program")
+}
+
+func (wg *WasmGenerator) GenProgExit() string {
+	wg.asm = append(wg.asm, ")\n(memory "+string(wg.memorySize/(2<<16)+1)+")\n(start $program)\n")
+	var theCode string = ""
+	for _, line := range wg.asm {
+		theCode += line
+	}
+	return theCode
 }
