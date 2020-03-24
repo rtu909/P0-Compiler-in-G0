@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"go/types"
 	"strconv"
 )
 
@@ -53,10 +54,16 @@ func releaseReg(r string){
 }
 
 func putLab(lab []string, instr string){
-	if {
 
+	if len(lab) == 1{
+		tuple := Triple{lab[0], instr, "" }
+		asm = append(asm, tuple)
 	} else {
-		tuple := Triple{lab, instr, "" }
+		for i := 0; i < len(lab)-1; i++{
+			tuple := Triple{lab[i], "", "" }
+			asm = append(asm, tuple)
+		}
+		tuple := Triple{lab[len(lab)-1], instr, "" }
 		asm = append(asm, tuple)
 	}
 }
@@ -83,22 +90,33 @@ func putMemOp(op string, a string, b string, c string){
 }
 
 //size - not sure what's going on here in the regular code
-func genBool(){
-
+func genBool(b P0Bool) P0Bool{
+	b.SetSize(4)
+	return b
 }
 
-func genInt(){
-
+func genInt(i P0Int) P0Int{
+	i.SetSize(4)
+	return i
 }
 
-func genRec(){
+func genRec(r P0Record) P0Record{
+	s:= 0
+	fields := r.GetFields()
+	for f := 0; f < len(fields); f++{
 
+	}
+	r.SetSize(s)
+	return r
 }
 
-func genArray(){
-
+func genArray(a P0Array) P0Array {
+	size := a.GetLength() + a.GetElementType().GetSize()
+	a.SetSize(size)
+	return a
 }
 
+//todo
 func genGlobalVars(sc []P0Var, start int ){
 	for i:= len(sc) -1; i > start -1; i--{
 
@@ -178,20 +196,46 @@ func NewCond(tp interface{}, cond string, left interface{}, right interface{}) C
 	return (c)
 }
 
-func testRange(){
-
+func testRange(x P0Type){
+	if (x.GetLevel() >= 0x8000) || (x.GetLevel() < -0x8000){
+		mark("value too large")
+	}
 }
 
-func loadItemReg(){
-
+//todo
+func loadItemReg(x P0Type, r string){
+	if {
+		putMemOp("lw", r, x.GetName(), r)
+		releaseReg(x.GetName())
+	}else if {
+		testRange(x)
+		putOp("addi", r, R0, strconv.Itoa(x.GetLevel()))
+	}else if{
+		putOp("add", r, x.GetName(), R0)
+	} else{
+		panic("loadItemReg has problems")
+	}
 }
 
-func loadItem(){
-
+//todo
+func loadItem(x P0Type) Reg{
+	if {
+		r := R0
+	} else{
+		r := obtainReg()
+		loadItemReg(x, r)
+	}
+	//Reg(x.GetP0Type(), r)
 }
 
-func loadBool(){
-
+//todo
+func loadBool(x P0Type) Cond{
+	if {
+		r := R0
+	} else{
+		r := obtainReg()
+		loadItemReg(x, r)
+	}
 }
 
 func put(){
@@ -295,13 +339,15 @@ func genIfElse(){
 }
 
 func genWhile(){
-
+	lab := newLabel()
+	putLab(lab, "")
 }
 
 func genDo(){
-
+	genThen()
 }
 
-func genWhileDo(){
-
+func genWhileDo(lab string, x Cond){
+	putInstr("b", lab)
+	putLab(x.labA, "")
 }
