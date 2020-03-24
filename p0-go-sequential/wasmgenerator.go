@@ -57,8 +57,8 @@ func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
 				break
 			case *P0Array:
 			case *P0Record:
-				// TODO: need to add an adr instance variable to the declaration
 				asVar.SetLevel(-2)
+				asVar.SetAddress(wg.memorySize)
 				wg.memorySize += entry.GetP0Type().GetSize()
 				break
 			default:
@@ -96,7 +96,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) {
 		} else if asVar.GetLevel() == wg.currentLevel {
 			wg.asm = append(wg.asm, "local.get $"+asVar.GetName())
 		} else if asVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const " /* TODO: +asVar.GetAddress() */)
+			wg.asm = append(wg.asm, "i32.const "+string(asVar.GetAddress()))
 			wg.asm = append(wg.asm, "i32.load")
 		}
 	} else {
@@ -128,11 +128,11 @@ func (wg *WasmGenerator) GenVar(entry Entry) Entry {
 	if isRef {
 		newEntry = &P0Ref{entry.GetP0Type(), entry.GetName(), entry.GetLevel(), "", 0, 0}
 	} else {
-		_, isVar := entry.(*P0Var)
+		asVar, isVar := entry.(*P0Var)
 		if isVar {
 			newEntry = &P0Var{entry.GetP0Type(), entry.GetName(), entry.GetLevel(), "", 0, 0}
 			if entry.GetLevel() == -2 {
-				// TODO: copy the address of the old entry to the new entry
+				newEntry.(*P0Var).SetAddress(asVar.GetAddress())
 			}
 		}
 	}
@@ -251,7 +251,7 @@ func (wg *WasmGenerator) GenRelation(op int, x Entry, y Entry) Entry {
 func (wg *WasmGenerator) GenSelect(x Entry, f Entry) Entry {
 	asVar, isVar := x.(*P0Var)
 	if isVar {
-		// TODO: x.SetAddress(x.GetAddress() + f.GetOffset())
+		asVar.SetAddress(asVar.GetAddress() + f.(*P0Var).GetOffset()) // TODO: make sure that parameters are vars
 		asVar.p0type = f.GetP0Type()
 		return asVar
 	} else {
@@ -260,7 +260,7 @@ func (wg *WasmGenerator) GenSelect(x Entry, f Entry) Entry {
 			if x.GetLevel() > 0 {
 				wg.asm = append(wg.asm, "local.get $"+x.GetName())
 			}
-			wg.asm = append(wg.asm, "i32.const " /* TODO: + f.GetOffset()*/)
+			wg.asm = append(wg.asm, "i32.const "+string(f.(*P0Var).GetOffset()))
 			wg.asm = append(wg.asm, "i32.add")
 			asRef.SetLevel(-1)
 			asRef.p0type = f.GetP0Type()
@@ -321,7 +321,7 @@ func (wg *WasmGenerator) GenAssign(x, y Entry) {
 	xAsRef, xIsRef := x.(*P0Ref)
 	if xIsVar {
 		if xAsVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const " /* TODO: x.GetAddress()*/)
+			wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
 		}
 		wg.LoadItem(y)
 		if xAsVar.GetLevel() == 0 {
@@ -397,8 +397,9 @@ func (wg *WasmGenerator) GenProcExit(x Entry, parsize, localsize int) {
 func (wg *WasmGenerator) GenActualPara(ap, fp Entry, n interface{}) {
 	_, asRef := fp.(*P0Ref)
 	if asRef {
+		// Assume that ap is a Var
 		if ap.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const " /* TODO: + string(ap.GetAddress) */)
+			wg.asm = append(wg.asm, "i32.const "+string(ap.(*P0Var).GetAddress()))
 		}
 	} else {
 		switch _ := ap.(type) {
