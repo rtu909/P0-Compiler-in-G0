@@ -291,7 +291,9 @@ func put(cd string, x interface{}, y interface{}) interface{} {
 }
 
 func genVar(x P0Type){
+	if 0 < x.GetLevel() < curlev{
 
+	}
 }
 
 func genConst(){
