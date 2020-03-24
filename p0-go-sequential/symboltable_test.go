@@ -4,7 +4,7 @@ import "testing"
 
 func TestVariableFind(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myVar := &P0Var{&P0Bool{}, "", 0}
+	myVar := &P0Var{&P0Bool{}, "", 0, "", 0, 0}
 	st.Init()
 	st.NewDecl("potato", myVar)
 	foundValue := st.Find("potato")
@@ -60,7 +60,7 @@ func TestEmptyFind(t *testing.T) {
 
 func TestDeclDroppedOutOfScope(t *testing.T) {
 	st := new(SliceMapSymbolTable)
-	myVar := &P0Var{&P0Int{}, "", 0}
+	myVar := &P0Var{&P0Int{}, "", 0, "", 0, 0}
 	st.Init()
 	st.OpenScope()
 	st.NewDecl("potato", myVar)

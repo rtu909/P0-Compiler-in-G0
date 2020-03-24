@@ -13,6 +13,10 @@ type SymbolTable interface {
 
 // Entry represents items that can be put into the SymbolTable.
 // All entries have a type, name, and level they are declared at.
+// TODO: add methods for:
+//  * adr
+//  * reg
+//  * offset
 type Entry interface {
 	GetP0Type() P0Type // This is the type related to the entry
 	GetName() string   // This is the name of the entry as a string
@@ -238,6 +242,9 @@ type P0Var struct {
 	p0type P0Type
 	name   string
 	level  int
+	reg    string // The resgister it is currently stored in
+	adr    int    // the location in heap memory it is stored
+	offset int    // The offset of the value from the beginning of the structure/array that it is at
 }
 
 func (p0var *P0Var) GetP0Type() P0Type {
@@ -269,12 +276,39 @@ func (p0var *P0Var) SetLevel(newLevel int) {
 	(*p0var).level = newLevel
 }
 
+func (p0var *P0Var) GetRegister() string {
+	return p0var.reg
+}
+
+func (p0var *P0Var) SetRegister(newReg string) {
+	p0var.reg = newReg
+}
+
+func (p0var *P0Var) GetAddress() int {
+	return p0var.adr
+}
+
+func (p0var *P0Var) SetAddress(newAddress int) {
+	p0var.adr = newAddress
+}
+
+func (p0var *P0Var) GetOffset() int {
+	return p0var.offset
+}
+
+func (p0var *P0Var) SetOffset(newOffset int) {
+	p0var.offset = newOffset
+}
+
 // P0Ref represents an entry in the symbol table for a reference (pointer-like construct) in P0.
 // It implements the Entry interface so that it can be stored in the symbol table
 type P0Ref struct {
 	p0type P0Type
 	name   string
 	level  int
+	reg    string
+	adr    int
+	offset int
 }
 
 func (p0ref *P0Ref) GetP0Type() P0Type {
@@ -304,6 +338,30 @@ func (p0ref *P0Ref) GetLevel() int {
 
 func (p0ref *P0Ref) SetLevel(newLevel int) {
 	(*p0ref).level = newLevel
+}
+
+func (p0ref *P0Ref) GetRegister() string {
+	return p0ref.reg
+}
+
+func (p0ref *P0Ref) SetRegister(newReg string) {
+	p0ref.reg = newReg
+}
+
+func (p0ref *P0Ref) GetAddress() int {
+	return p0ref.adr
+}
+
+func (p0ref *P0Ref) SetAddress(newAddress int) {
+	p0ref.adr = newAddress
+}
+
+func (p0ref *P0Ref) GetOffset() int {
+	return p0ref.offset
+}
+
+func (p0ref *P0Ref) SetOffset(newOffset int) {
+	p0ref.offset = newOffset
 }
 
 // P0Const represents an entry in the symbol table for a P0 constant
