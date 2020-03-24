@@ -357,3 +357,116 @@ func (wg *WasmGenerator) GenProgExit() string {
 	}
 	return theCode
 }
+
+func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) {
+	if wg.currentLevel > 0 {
+		mark("WASM: no nested procedures")
+	}
+	wg.currentLevel++
+	funcDecl := "(func $" + ident + " "
+	for _, entry := range fp {
+		_, isVar := entry.(*P0Var)
+		_, isRef := entry.(*P0Ref)
+		switch _ := entry.GetP0Type().(type) {
+		case *P0Int:
+		case *P0Bool:
+			if isRef {
+				mark("WASM: Only array and record reference parameters")
+			}
+			break
+		case *P0Array:
+		case *P0Record:
+			if isVar {
+				mark("WASM: no structured valued parameters")
+			}
+			break
+		}
+		funcDecl += "(param $" + entry.GetName() + " i32) "
+	}
+	wg.asm = append(wg.asm, funcDecl)
+}
+
+func (wg *WasmGenerator) GenProcEntry(ident string, parsize, localsize int) {
+}
+
+func (wg *WasmGenerator) GenProcExit(x Entry, parsize, localsize int) {
+	wg.currentLevel--
+	wg.asm = append(wg.asm, ")")
+}
+
+// I don't got no clue what to heck n is so its a void pointer
+func (wg *WasmGenerator) GenActualPara(ap, fp Entry, n interface{}) {
+	_, asRef := fp.(*P0Ref)
+	if asRef {
+		if ap.GetLevel() == -2 {
+			wg.asm = append(wg.asm, "i32.const " /* TODO: + string(ap.GetAddress) */)
+		}
+	} else {
+		switch _ := ap.(type) {
+		case *P0Var:
+		case *P0Ref:
+		case *P0Const:
+			wg.LoadItem(ap)
+			break
+		default:
+			mark("Unsupported parameter type")
+		}
+	}
+}
+
+func (wg *WasmGenerator) GenCall(pr, ap Entry) {
+	wg.asm = append(wg.asm, "call $"+pr.GetName())
+}
+
+func (wg *WasmGenerator) GenRead(x Entry) {
+	wg.asm = append(wg.asm, "call $read")
+	// Dr. Sekerinski's 'hack' from the email I sent him
+	y := &P0Var{&P0Int{}, "", -1}
+	wg.GenAssign(x, y)
+}
+
+func (wg *WasmGenerator) GenWrite(x Entry) {
+	wg.LoadItem(x)
+	wg.asm = append(wg.asm, "call $write")
+}
+
+func (wg *WasmGenerator) GenWriteln() {
+	wg.asm = append(wg.asm, "call $writeln")
+}
+
+func (wg *WasmGenerator) GenSeq(x, y Entry) {
+}
+
+func (wg *WasmGenerator) GenThen(x Entry) Entry {
+	wg.LoadItem(x)
+	wg.asm = append(wg.asm, "if")
+	return x
+}
+
+func (wg *WasmGenerator) GenIfThen(x Entry) {
+	wg.asm = append(wg.asm, "end")
+}
+
+func (wg *WasmGenerator) GenElse(x, y Entry) {
+	wg.asm = append(wg.asm, "else")
+}
+
+func (wg *WasmGenerator) GenIfElse(x, y, z Entry) {
+	wg.asm = append(wg.asm, "end")
+}
+
+func (wg *WasmGenerator) GenWhile() {
+	wg.asm = append(wg.asm, "loop")
+}
+
+func (wg *WasmGenerator) GenDo(x Entry) Entry {
+	wg.LoadItem(x)
+	wg.asm = append(wg.asm, "if")
+	return x
+}
+
+func (wg *WasmGenerator) GenWhileDo(t, x, y Entry) {
+	wg.asm = append(wg.asm, "br 1")
+	wg.asm = append(wg.asm, "end")
+	wg.asm = append(wg.asm, "end")
+}
