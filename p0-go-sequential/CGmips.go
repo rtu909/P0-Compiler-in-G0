@@ -172,6 +172,14 @@ type Reg struct {
 	reg string
 }
 
+func NewReg(tp interface{}, reg string) Reg{
+	r := Reg{
+		tp:  tp,
+		reg: reg,
+	}
+	return r
+}
+
 type Cond struct{
 	tp interface{}
 	cond string
@@ -196,8 +204,8 @@ func NewCond(tp interface{}, cond string, left interface{}, right interface{}) C
 	return (c)
 }
 
-func testRange(x P0Type){
-	if (x.GetLevel() >= 0x8000) || (x.GetLevel() < -0x8000){
+func testRange(x P0Const){
+	if (x.GetValue().(int) >= 0x8000) || (x.GetValue().(int) < -0x8000){
 		mark("value too large")
 	}
 }
@@ -238,11 +246,51 @@ func loadBool(x P0Type) Cond{
 	}
 }
 
-func put(){
+func put(cd string, x interface{}, y interface{}) interface{} {
+	_, xisReg := x.(*Reg)
+	r := ""
+	if !xisReg{
+		x = loadItem(x.(P0Type))
+	} else {
+		var regList []string
+		regList = append(regList, R0)
+		regList = append(regList, A0)
+		regList = append(regList, A1)
+		regList = append(regList, A2)
+		regList = append(regList, A3)
+		x := x.(Reg)
+		var regFound bool
+		regFound = false
 
+		for i := 0; i < len(regList); i++ {
+			if regList[i] == x.reg {
+				regFound = true
+			}
+		}
+		if regFound {
+			r = x.reg
+			x.reg = obtainReg()
+		} else {
+			r = x.reg
+		}
+	}
+		_, yisConst := y.(*P0Const)
+		if yisConst{
+			y := y.(P0Const)
+			testRange(y)
+			putOp(cd, x.(Reg).reg, r, y.GetValue().(string))
+		} else{
+			_, yisReg := y.(*Reg)
+			if !yisReg{
+				y = loadItem(y.(P0Type))
+			}
+			putOp(cd, x.(Reg).reg, r, y.(Reg).reg)
+			releaseReg(y.(Reg).reg)
+		}
+	return x
 }
 
-func genVar(){
+func genVar(x P0Type){
 
 }
 
