@@ -428,24 +428,78 @@ func genUnaryOp(op int, x interface{}) interface{}{
 	return x
 }
 
-func genBinaryOp(){
+func genBinaryOp(op int, x Cond, y interface{}) interface{}{
+	if op == PLUS{
+		y = put("add", x, y)
+	} else if op == MINUS{
+		y = put("sub", x, y)
+	} else if op == TIMES{
+		y = put("mul", x, y)
+	} else if op == DIV{
+		y = put("div", x, y)
+	} else if op == MOD{
+		y = put("mod", x, y)
+	} else if op == AND{
+		_, yisCond := y.(*Cond)
+		if !yisCond{
+			y = loadBool(y.(P0Type))
+		}
+		//todo
+	} else if op == OR {
+		_, yisCond := y.(*Cond)
+		if !yisCond{
+			y = loadBool(y.(P0Type))
+		}
+		//todo
+	} else{
+		panic("genBinaryOp failed")
+	}
 
+	return y
 }
 
-func genRelation(){
-
+func genRelation(op int, x interface{}, y interface{}) Cond{
+	_, xisReg := x.(*Reg)
+	_, yisReg := y.(*Reg)
+	if !xisReg{
+		x = loadItem(x.(P0Type))
+	}
+	if !yisReg{
+		y = loadItem(y.(P0Type))
+	}
+	return NewCond(op, x.(Reg).reg,y.(Reg).reg, ""  )
 }
 
-func genSelect(){
-
+func genSelect(x P0Ref, f P0Var) P0Ref{
+	x.p0type = f.p0type
+	x.adr = x.adr + f.offset
+	return x
 }
 
-func genIndex(){
-
+func genIndex(x interface{}, y interface{}) interface{}{
+	_, yisConst := y.(*P0Const)
+	if yisConst{
+		offset := (y.(P0Const).GetValue().(int) - x.(P0Var).p0type.(int)) * x.(P0Var).GetSize()
+		x.(P0Var).SetAddress(x.(P0Var).GetAddress() + offset)
+	} else{
+		_, yisReg := y.(*Reg)
+		if !yisReg{
+			y = loadItem(y.(P0Type))
+		}
+		putOp("sub", y.(Reg).reg, y.(Reg).reg, x.(P0Var).GetP0Type())
+		putOp("mul", y.(Reg).reg, y.(Reg).reg, x.(P0Var).GetSize())
+		if x.(P0Var).GetRegister() != R0{
+			putOp("sub", y.(Reg).reg, x.(P0Var).reg, y.(Reg).reg)
+			releaseReg(x.(Reg).reg)
+		}
+		x.(P0Var).SetRegister(y.(Reg).reg)
+	}
+	x.(P0Var).p0type = x.(P0Var).GetSize() //idk what to do here
+	return x
 }
 
-func genAssign(){
-
+func genAssign(x interface{}, y interface{}){
+	
 }
 
 func genLocalVars(){
@@ -468,40 +522,60 @@ func genActualPara(){
 
 }
 
-func genCall(){
-
+func genCall(pr P0Proc){
+	putInstr("jal", pr.GetName())
 }
 
-func genRead(){
-
+func genRead(x P0Var){
+	putInstr("li $v0, 5", "")
+	putInstr("syscall", "")
+	adr := strconv.Itoa(x.GetAddress())
+	putMemOp("sw", "$v0", x.GetRegister(), adr)
 }
 
-func genWrite(){
-
+func genWrite(x P0Type){
+	loadItemReg(x, "$a0")
+	putInstr("li $v0, 1", "")
+	putInstr("syscall", "")
 }
 
 func genWriteln(){
-
+	putInstr("li $v0, 11", "")
+	putInstr("li $a0, '\\n'", "")
+	putInstr("syscall", "")
 }
 
 func genSeq(){
-
+	//pass
 }
 
-func genThen(){
-
+func genThen(x interface{}) interface{}{
+	_, xisCond := x.(*Cond)
+	if !xisCond{
+		x = loadBool(x.(P0Type))
+	}
+	str1 := x.(Cond).cond
+	str2, _ := strconv.Atoi(str1)
+	putBranchOp(condOp(negate(str2)), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labA[0])
+	releaseReg(x.(Cond).left.(string))
+	releaseReg(x.(Cond).right.(string))
+	putLab(x.(Cond).labB, "")
+	return x
 }
 
-func genIfThen(){
-
+func genIfThen(x Cond){
+	putLab(x.labA, "")
 }
 
-func genElse(){
-
+func genElse(x Cond) string{
+	lab := newLabel()
+	putInstr("b", lab)
+	putLab(x.labA, "")
+	return lab
 }
 
-func genIfElse(){
-
+func genIfElse(y[]string){
+	putLab(y, "")
 }
 
 func genWhile(){
@@ -511,8 +585,8 @@ func genWhile(){
 	putLab(lab1, "")
 }
 
-func genDo(){
-	genThen()
+func genDo(x interface{}) interface{}{
+	return genThen(x)
 }
 
 func genWhileDo(lab string, x Cond){
