@@ -162,6 +162,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	switch target {
 	case Wat:
 		// Prepare
+		cg = &WasmGenerator{}
 	case Mips:
 		// Prepare
 	default:

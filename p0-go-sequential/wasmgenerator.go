@@ -173,7 +173,7 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 	return entry
 }
 
-func (wg *WasmGenerator) GenBinaryOP(op int, x Entry, y Entry) Entry {
+func (wg *WasmGenerator) GenBinaryOp(op int, x, y Entry) Entry {
 	switch op {
 	case PLUS:
 	case MINUS:

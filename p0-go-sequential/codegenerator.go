@@ -31,7 +31,7 @@ type CodeGenerator interface {
 	GenWriteln()
 	GenSeq(x, y Entry)
 	GenThen(Entry) Entry
-	GenIfThen(Entry) Entry
+	GenIfThen(Entry)
 	GenElse(x, y Entry)
 	GenIfElse(x, y, z Entry)
 	GenWhile()
