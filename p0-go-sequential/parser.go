@@ -19,6 +19,10 @@ var FOLLOWDECL = [1]int{BEGIN}
 var FOLLOWPROCCALL = [3]int{SEMICOLON, END, ELSE}
 var STRONGSYMS = [8]int{CONST, TYPE, VAR, PROCEDURE, WHILE, IF, BEGIN, EOF}
 
+// TODO: put into a struct?
+var st SymbolTable
+var cg CodeGenerator
+
 func selector(x Entry) Entry {
 	var a = [2]int{PERIOD, LBRAK}
 	for doesContain(a[:], sym) {
@@ -90,6 +94,30 @@ func expression() Entry {
 	return nil
 }
 
+func compoundStatement() Entry {
+	// TODO:
+}
+
+func statement() Entry {
+	// TODO:
+}
+
+func typ() P0Type {
+	// TODO:
+}
+
+func typedIds(kind func(P0Type) P0Type) {
+	// TODO:
+}
+
+func declarations(allocVar []Entry) int {
+	// TODO:
+}
+
+func program() string {
+	st.NewDecl("boolean", cg.GenBool())
+}
+
 // P0Primitive is an enumerated type that represents one of the built-in types in P0.
 // It is only meant to represent the base types; composite types are represented in P0Type
 type P0Target int
@@ -134,6 +162,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	switch target {
 	case Wat:
 		// Prepare
+		cg = &WasmGenerator{}
 	case Mips:
 		// Prepare
 	default:
@@ -141,7 +170,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 		panic(nil)
 	}
 	ScannerInit(sourceCode)
-	st := new(SliceMapSymbolTable)
+	st = new(SliceMapSymbolTable)
 	st.Init()
 }
 

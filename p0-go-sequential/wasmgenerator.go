@@ -46,7 +46,7 @@ func (wg *WasmGenerator) GenArray(p0Type P0Type) P0Type {
 // GenGlobalVars creates the code for declaring the global variables at the start of the file.
 // sc is a map of names to types. It represents all the global variable declarations.
 // start Represents TODO:
-func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
+func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
@@ -68,14 +68,14 @@ func (wg *WasmGenerator) GenGlobalVars(sc map[string]Entry, start int) {
 	}
 }
 
-func (wg *WasmGenerator) GenLocalVars(sc map[string]Entry, start int) {
-	for declName, entry := range sc {
+func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) {
+	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
 			switch _ := asVar.GetP0Type().(type) {
 			case *P0Int:
 			case *P0Bool:
-				(*wg).asm = append((*wg).asm, "(local $"+declName+" i32)")
+				(*wg).asm = append((*wg).asm, "(local $"+entry.GetName()+" i32)")
 				break
 			case *P0Array:
 			case *P0Record:
@@ -88,7 +88,8 @@ func (wg *WasmGenerator) GenLocalVars(sc map[string]Entry, start int) {
 	}
 }
 
-func (wg *WasmGenerator) LoadItem(entry Entry) {
+// The returned value is nil
+func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 	asVar, isVar := entry.(*P0Var)
 	if isVar {
 		if asVar.GetLevel() == 0 {
@@ -117,6 +118,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) {
 			}
 		}
 	}
+	return nil
 }
 
 func (wg *WasmGenerator) GenVar(entry Entry) Entry {
@@ -171,7 +173,7 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 	return entry
 }
 
-func (wg *WasmGenerator) GenBinaryOP(op int, x Entry, y Entry) Entry {
+func (wg *WasmGenerator) GenBinaryOp(op int, x, y Entry) Entry {
 	switch op {
 	case PLUS:
 	case MINUS:
@@ -357,6 +359,9 @@ func (wg *WasmGenerator) GenProgExit() string {
 	return theCode
 }
 
+// GenProcStart generates the beginning of a procedure declaration
+// ident is the name of the procedure
+// fp is a slice holding the formal parameters of the procedure
 func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) {
 	if wg.currentLevel > 0 {
 		mark("WASM: no nested procedures")
@@ -393,8 +398,9 @@ func (wg *WasmGenerator) GenProcExit(x Entry, parsize, localsize int) {
 	wg.asm = append(wg.asm, ")")
 }
 
-// I don't got no clue what to heck n is so its a void pointer
-func (wg *WasmGenerator) GenActualPara(ap, fp Entry, n interface{}) {
+// ap is the actual parameter
+// fp is the formal parameter
+func (wg *WasmGenerator) GenActualPara(ap, fp Entry, parameterNumber int) {
 	_, asRef := fp.(*P0Ref)
 	if asRef {
 		// Assume that ap is a Var
@@ -414,7 +420,7 @@ func (wg *WasmGenerator) GenActualPara(ap, fp Entry, n interface{}) {
 	}
 }
 
-func (wg *WasmGenerator) GenCall(pr, ap Entry) {
+func (wg *WasmGenerator) GenCall(pr Entry) {
 	wg.asm = append(wg.asm, "call $"+pr.GetName())
 }
 
