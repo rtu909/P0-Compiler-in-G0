@@ -499,23 +499,131 @@ func genIndex(x interface{}, y interface{}) interface{}{
 }
 
 func genAssign(x interface{}, y interface{}){
-	
+	_, xisVar := x.(*P0Var)
+	_, xisReg := x.(*Reg)
+	r := ""
+	if xisVar{
+		_, yisVar := y.(*Cond)
+		_, yisReg := y.(*Reg)
+		if yisVar{
+			str1 := y.(Cond).cond
+			str2, _ := strconv.Atoi(str1)
+			putBranchOp(condOp(str2), y.(Cond).left.(string), y.(Cond).right.(string), y.(Cond).labA[0])
+			releaseReg(y.(Cond).left.(string))
+			releaseReg(y.(Cond).right.(string))
+			r = obtainReg()
+			putLab(y.(Cond).labB, "")
+			putOp("addi", r, R0, strconv.Itoa(1))
+			var lab_list []string
+			lab := newLabel()
+			lab_list = append(lab_list, lab)
+			putInstr("b", lab)
+			putLab(y.(Cond).labA, "")
+			putOp("addi", r, R0, strconv.Itoa(0))
+			putLab(lab_list, "")
+		} else if !yisReg{
+			y = loadItem(y.(P0Type))
+			r = y.(Reg).reg
+		} else {
+			r = y.(Reg).reg
+		}
+		putMemOp("sw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()) )
+		releaseReg(r)
+	} else if xisReg{
+		_, yisVar := y.(*Cond)
+		_, yisReg := y.(*Reg)
+		if yisVar{
+			str1 := y.(Cond).cond
+			str2, _ := strconv.Atoi(str1)
+			putBranchOp(condOp(str2), y.(Cond).left.(string), y.(Cond).right.(string), y.(Cond).labA[0])
+			releaseReg(y.(Cond).left.(string))
+			releaseReg(y.(Cond).right.(string))
+			putLab(y.(Cond).labB, "")
+			putOp("addi", x.(Reg).reg, R0, strconv.Itoa(1))
+			var lab_list []string
+			lab := newLabel()
+			lab_list = append(lab_list, lab)
+			putInstr("b", lab)
+			putLab(y.(Cond).labA, "")
+			putOp("addi", x.(Reg).reg, R0, strconv.Itoa(0))
+			putLab(lab_list, "")
+		} else if !yisReg{
+			loadItemReg(y.(P0Type), x.(Reg).reg)
+		} else {
+			putOp("addi", x.(Reg).reg, y.(Reg).reg, strconv.Itoa(0))
+		}
+	} else {
+		panic("genAssign not working")
+	}
 }
 
-func genLocalVars(){
-
+func genLocalVars(sc[]Entry, start int) int{
+	s := 0
+	for i:= start; i < len(sc); i++{
+		_, scIsVar := sc[i].(*P0Var)
+		if scIsVar{
+			s = s + sc[i].(*P0Var).GetSize()
+			sc[i].(*P0Var).SetRegister(FP)
+			sc[i].(*P0Var).SetAddress(-s-0)
+		}
+	}
+	return s
 }
 
-func genProcStart(){
-
+func genProcStart(fp[]Entry) int{
+	curlev = curlev + 1
+	n := len(fp)
+	for i := 0; i < n; i++{
+		_, fpisInt := fp[i].(*P0Int)
+		_, fpisBool := fp[i].(*P0Bool)
+		_, fpisRef := fp[i].(*P0Ref)
+		if fpisInt || fpisBool || fpisRef{
+			if fpisInt || fpisBool {
+				if i < 4 {
+					fp[i].(*P0Var).SetRegister("$a" + strconv.Itoa(i))
+					fp[i].(*P0Var).SetAddress(0)
+				} else {
+					fp[i].(*P0Var).SetRegister(FP)
+					fp[i].(*P0Var).SetAddress((n - i - 1) * 4)
+				}
+			} else if fpisRef{
+				if i < 4 {
+					fp[i].(*P0Ref).SetRegister("$a" + strconv.Itoa(i))
+					fp[i].(*P0Ref).SetAddress(0)
+				} else {
+					fp[i].(*P0Ref).SetRegister(FP)
+					fp[i].(*P0Ref).SetAddress((n - i - 1) * 4)
+				}
+			}
+		} else{
+			mark("no structured value parameters")
+		}
+	}
+	if (n -4) * 4 > 0{
+		return (n -4) * 4
+	} else {
+		return 0
+	}
 }
 
-func genProcEntry(){
-
+func genProcEntry(ident string, parsize int, localsize int){
+	putInstr(".globl" + ident, "")
+	putInstr(".ent" + ident, "")
+	var lab_list[] string
+	lab_list = append(lab_list, ident)
+	putLab(lab_list, "")
+	putMemOp("sw", FP, SP, strconv.Itoa(-parsize-4))
+	putMemOp("sw", LNK, SP, strconv.Itoa(-parsize-8))
+	putOp("sub", FP, SP, strconv.Itoa(parsize))
+	putOp("sub", SP, FP, strconv.Itoa(localsize + 8))
 }
 
-func genProcExit(){
-
+func genProcExit(parsize int, localsize int){
+	curlev = curlev - 1
+	putOp("add", SP, FP, strconv.Itoa(parsize))
+	putMemOp("lw", LNK, FP, strconv.Itoa(-8))
+	putMemOp("lw", FP, FP, strconv.Itoa(-4))
+	putInstr("jr $ra", "")
 }
 
 func genActualPara(){
