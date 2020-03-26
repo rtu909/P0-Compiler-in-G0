@@ -50,7 +50,7 @@ func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			switch _ := asVar.GetP0Type().(type) {
+			switch asVar.GetP0Type().(type) {
 			case *P0Bool:
 			case *P0Int:
 				(*wg).asm = append((*wg).asm, "(global $"+entry.GetName()+" (mut i32) i32.const 0)")
@@ -72,7 +72,7 @@ func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
-			switch _ := asVar.GetP0Type().(type) {
+			switch asVar.GetP0Type().(type) {
 			case *P0Int:
 			case *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+entry.GetName()+" i32)")
@@ -371,7 +371,7 @@ func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) {
 	for _, entry := range fp {
 		_, isVar := entry.(*P0Var)
 		_, isRef := entry.(*P0Ref)
-		switch _ := entry.GetP0Type().(type) {
+		switch entry.GetP0Type().(type) {
 		case *P0Int:
 		case *P0Bool:
 			if isRef {
@@ -408,7 +408,7 @@ func (wg *WasmGenerator) GenActualPara(ap, fp Entry, parameterNumber int) {
 			wg.asm = append(wg.asm, "i32.const "+string(ap.(*P0Var).GetAddress()))
 		}
 	} else {
-		switch _ := ap.(type) {
+		switch ap.(type) {
 		case *P0Var:
 		case *P0Ref:
 		case *P0Const:

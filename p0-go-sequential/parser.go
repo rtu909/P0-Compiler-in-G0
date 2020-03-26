@@ -101,10 +101,12 @@ func compoundStatement() {
 
 func statement() Entry {
 	// TODO:
+	return nil
 }
 
 func typ() P0Type {
 	// TODO:
+	return nil
 }
 
 func typedIds(kind func(P0Type) P0Type) {
@@ -136,7 +138,27 @@ func declarations() int {
 		}
 		getElseMark(sym == SEMICOLON, "; expected")
 	}
-	// TODO: Not done yet!
+	for sym == TYPE {
+		getSym()
+		if sym == IDENT {
+			ident := val.(string)
+			getSym()
+			getElseMark(sym == EQ, "= expected")
+			x := typ()
+			st.NewDecl(ident, x)
+			getElseMark(sym == SEMICOLON, "; expected")
+		} else {
+			mark("type name expected")
+		}
+	}
+	start := len(st.TopScope())
+	for sym == VAR {
+		getSym()
+		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
+		getElseMark(sym == SEMICOLON, "; expected")
+	}
+	cg.GenGlobalVars(st.TopScope(), start)
+	return 0 // TODO:
 }
 
 func program() string {

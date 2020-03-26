@@ -112,3 +112,32 @@ func TestFindDeclarationFromInnerLabel(t *testing.T) {
 		t.Errorf("Found a value of %v, but expected 42", myConst.GetValue())
 	}
 }
+
+func TestTopScope(t *testing.T) {
+	st := new(SliceMapSymbolTable)
+	myConst := &P0Const{&P0Int{}, "", 0, 42}
+	st.Init()
+	st.NewDecl("potato", myConst)
+	st.OpenScope()
+	myOtherConst := &P0Const{&P0Int{}, "", 0, 32}
+	st.NewDecl("cilantro", myOtherConst)
+	for _, val := range st.TopScope() {
+		asConst, isConst := val.(*P0Const)
+		if !isConst {
+			t.Error("Only consts were declared, but a non-const declaration was found")
+		}
+		if asConst.GetValue() != 32 || asConst.GetName() != "cilantro" {
+			t.Error("Found something that wasn't supposed to be in the top declaration")
+		}
+	}
+	st.CloseScope()
+	for _, val := range st.TopScope() {
+		asConst, isConst := val.(*P0Const)
+		if !isConst {
+			t.Error("Only consts were declared, but a non-const declaration was found")
+		}
+		if asConst.GetValue() != 42 || asConst.GetName() != "potato" {
+			t.Error("Found something that wasn't supposed to be in the top declaration")
+		}
+	}
+}

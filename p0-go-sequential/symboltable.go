@@ -8,7 +8,7 @@ type SymbolTable interface {
 	Find(string) Entry
 	OpenScope()
 	CloseScope()
-	TopScope() map[string]Entry
+	TopScope() []Entry
 }
 
 // Entry represents items that can be put into the SymbolTable.
@@ -540,7 +540,11 @@ func (st *SliceMapSymbolTable) CloseScope() {
 	*st = (*st)[0 : len(*st)-1]
 }
 
-// TopScope returns the top scope, as a map from strings to Entries
-func (st *SliceMapSymbolTable) TopScope() map[string]Entry {
-	return (*st)[0]
+// TopScope returns the top scope, as a slice of Entries
+func (st *SliceMapSymbolTable) TopScope() []Entry {
+	top := make([]Entry, 0)
+	for _, val := range (*st)[len(*st)-1] {
+		top = append(top, val)
+	}
+	return top
 }
