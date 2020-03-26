@@ -188,6 +188,18 @@ type Cond struct{
 	labB []string
 }
 
+func (condition *Cond) SetCondition(newCond string){
+	(*condition).cond = newCond
+}
+
+func (condition *Cond) SetLabA(newCond[]string){
+	(*condition).labA = newCond
+}
+
+func (condition *Cond) SetLabB(newCond[]string){
+	(*condition).labB = newCond
+}
+
 func NewCond(tp interface{}, cond string, left interface{}, right interface{}) Cond{
 	var labA []string
 	var labB []string
@@ -290,26 +302,130 @@ func put(cd string, x interface{}, y interface{}) interface{} {
 	return x
 }
 
-func genVar(x P0Type){
-	if 0 < x.GetLevel() < curlev{
+func genVar(x P0Type) interface{}{
+	var y interface{}
 
+	if (0 < x.GetLevel()) && (x.GetLevel() < curlev){
+		mark("level")
 	}
+	_, xisRef := x.(*P0Ref)
+	_, xisVar := x.(*P0Var)
+	if xisRef{
+		y := P0Var{p0type:x.GetP0Type()}
+		y.SetLevel(x.GetLevel())
+
+		var regList []string
+		regList = append(regList, R0)
+		regList = append(regList, A0)
+		regList = append(regList, A1)
+		regList = append(regList, A2)
+		regList = append(regList, A3)
+
+		var xinReg bool
+		for i := 0; i < len(regList); i++{
+			if x.(P0Ref).GetRegister() == regList[i]{
+				xinReg = true
+			}
+		}
+		if xinReg{
+			y.SetRegister(x.(P0Ref).GetRegister())
+			y.SetAddress(0)
+		} else{
+			y.SetRegister(obtainReg())
+			y.SetAddress(0)
+
+			putMemOp("lw", y.GetRegister(), x.(P0Ref).GetRegister(), x.(P0Ref).GetAddress())
+		}
+	} else if xisVar {
+		var regList []string
+		regList = append(regList, R0)
+		regList = append(regList, A0)
+		regList = append(regList, A1)
+		regList = append(regList, A2)
+		regList = append(regList, A3)
+
+		var xinReg bool
+		for i := 0; i < len(regList); i++{
+			if x.(P0Ref).GetRegister() == regList[i]{
+				xinReg = true
+			}
+		}
+		if xinReg{
+			y := Reg{
+				tp:  x.GetP0Type(),
+				reg: x.(P0Var).GetRegister(),
+			}
+		} else{
+			y := P0Var{p0type:x.GetP0Type()}
+			y.SetLevel(x.GetLevel())
+			y.SetRegister(x.(P0Var).GetRegister())
+			y.SetAddress(x.(P0Var).GetAddress())
+		}
+
+	} else{
+		panic("nothing is working")
+	}
+
+	return y
 }
 
-func genConst(){
-
+func genConst(x P0Const) P0Const{
+	return x
 }
 
-func negate(){
-
+func negate(cd int)int{
+	var dict = map[int]int{
+		EQ: NE, NE: EQ, LT: GE, LE: GT, GT: LE, GE: LT,
+	}
+	return dict[cd]
 }
 
-func condOp(){
-
+func condOp(cd int) string{
+	var dict = map[int]string{
+		EQ: "beq", NE: "bne", LT: GE, LE: GT, GT: LE, GE: LT,
+	}
+	return dict[cd]
 }
 
-func genUnaryOp(){
-
+func genUnaryOp(op int, x interface{}) interface{}{
+	_, xisVar := x.(*P0Var)
+	_, xisCond := x.(*Cond)
+	if op == MINUS{
+		if xisVar{
+			x = loadItem(x.(P0Type))
+		}
+		putOp("sub", x.(P0Var).GetRegister(), R0, x.(P0Var).GetRegister())
+	}else if op == NOT{
+		if !xisCond{
+			x = loadBool(x.(P0Type))
+		}
+		x.(Cond).SetCondition(negate(x.(Cond).cond))
+		x.(Cond).SetLabA(x.(Cond).labB)
+		x.(Cond).SetLabB(x.(Cond).labA)
+	} else if op == AND{
+		if !xisCond{
+			x = loadBool(x.(P0Type))
+		}
+		str1 := x.(Cond).cond
+		str2, _ := strconv.Atoi(str1)
+		putBranchOp(condOp(negate(str2)), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labA[0])
+		releaseReg(x.(Cond).left.(string))
+		releaseReg(x.(Cond).right.(string))
+		putLab(x.(Cond).labB, "")
+	} else if op == OR{
+		if !xisCond{
+			x = loadBool(x.(P0Type))
+		}
+		str1 := x.(Cond).cond
+		str2, _ := strconv.Atoi(str1)
+		putBranchOp(condOp(str2), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labB[0])
+		releaseReg(x.(Cond).left.(string))
+		releaseReg(x.(Cond).right.(string))
+		putLab(x.(Cond).labA, "")
+	} else{
+		panic("get unary op failed")
+	}
+	return x
 }
 
 func genBinaryOp(){
@@ -390,7 +506,9 @@ func genIfElse(){
 
 func genWhile(){
 	lab := newLabel()
-	putLab(lab, "")
+	var lab1 []string
+	lab1 = append(lab1, lab)
+	putLab(lab1, "")
 }
 
 func genDo(){
