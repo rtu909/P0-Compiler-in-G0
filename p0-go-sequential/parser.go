@@ -90,6 +90,30 @@ func expression() Entry {
 	return nil
 }
 
+func compoundStatement() Entry {
+	// TODO:
+}
+
+func statement() Entry {
+	// TODO:
+}
+
+func typ() P0Type {
+	// TODO:
+}
+
+func typedIds(kind func(P0Type) P0Type) {
+	// TODO:
+}
+
+func declarations(allocVar []Entry) int {
+	// TODO:
+}
+
+func program() string {
+	// TODO:
+}
+
 // P0Primitive is an enumerated type that represents one of the built-in types in P0.
 // It is only meant to represent the base types; composite types are represented in P0Type
 type P0Target int
