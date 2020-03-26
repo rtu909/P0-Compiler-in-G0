@@ -94,8 +94,9 @@ func expression() Entry {
 	return nil
 }
 
-func compoundStatement() Entry {
+func compoundStatement() {
 	// TODO:
+	// Doesn't need to return anything; the result is unused
 }
 
 func statement() Entry {
@@ -110,12 +111,51 @@ func typedIds(kind func(P0Type) P0Type) {
 	// TODO:
 }
 
-func declarations(allocVar []Entry) int {
-	// TODO:
+func declarations() int {
+	if !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym)) {
+		mark("'begin' or declaration expected")
+		for !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym) || doesContain(STRONGSYMS[:], sym)) {
+			getSym()
+		}
+	}
+	for sym == CONST {
+		getSym()
+		if sym == IDENT {
+			ident := val.(string)
+			getSym()
+			getElseMark(sym == EQ, "= expected")
+			x := expression()
+			_, xIsConst := x.(*P0Const)
+			if xIsConst {
+				st.NewDecl(ident, x)
+			} else {
+				mark("expression not constant")
+			}
+		} else {
+			mark("constant name expected")
+		}
+		getElseMark(sym == SEMICOLON, "; expected")
+	}
+	// TODO: Not done yet!
 }
 
 func program() string {
-	st.NewDecl("boolean", cg.GenBool())
+	st.NewDecl("boolean", cg.GenBool(&P0Bool{}))
+	st.NewDecl("integer", cg.GenBool(&P0Int{}))
+	st.NewDecl("true", &P0Const{&P0Bool{}, "", 0, 1})
+	st.NewDecl("false", &P0Const{&P0Bool{}, "", 0, 0})
+	st.NewDecl("read", &P0StdProc{nil, "", 0, []P0Type{&P0Ref{&P0Int{}, "", 0, "", 0, 0}}})
+	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{&P0Int{}, "", 0, "", 0, 0}}})
+	st.NewDecl("writeln", &P0StdProc{nil, "", 0, []P0Type{}})
+	cg.GenProgStart()
+	getElseMark(sym == PROGRAM, "'program expected")
+	// The original program actually accessed the program name here
+	getElseMark(sym == IDENT, "Program name expected")
+	getElseMark(sym == SEMICOLON, "; expected")
+	declarations()
+	cg.GenProgEntry( /*ident*/ ) // ident was passed in the og P0 compiler, but it is not used so we removed it
+	compoundStatement()
+	return cg.GenProgExit()
 }
 
 // P0Primitive is an enumerated type that represents one of the built-in types in P0.
@@ -181,4 +221,14 @@ func doesContain(elements []int, e int) bool {
 		}
 	}
 	return false
+}
+
+// If the predicate is true, getSym is called. Otherwise, mark is called with the message
+// I introduced to try to make the code easier to read; if it has the opposite effect let me know - David
+func getElseMark(predicate bool, markMessage string) {
+	if predicate {
+		getSym()
+	} else {
+		mark(markMessage)
+	}
 }
