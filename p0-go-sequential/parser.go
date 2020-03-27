@@ -154,7 +154,16 @@ func expression() Entry {
 }
 
 func compoundStatement() Entry {
-	return nil // TODO:
+	getElseMark(sym == BEGIN, "'begin' expected")
+	x := statement()
+	for sym == SEMICOLON || doesContain(FIRSTSTATEMENT[:], sym) {
+		getElseMark(sym == SEMICOLON, "; missing")
+		y := statement()
+		cg.GenSeq(x, y) // This returns a value in p0 to build the AST string representation; we just set x to nil here (same effect)
+		x = nil
+	}
+	getElseMark(sym == END, "'end' expected")
+	return x
 }
 
 func statement() Entry {
