@@ -8,8 +8,8 @@ type CodeGenerator interface {
 	GenInt(P0Type) P0Type
 	GenRecord(P0Type) P0Type
 	GenArray(P0Type) P0Type
-	GenGlobalVars(declaredVars []Entry, start int)
-	GenLocalVars(declaredVars []Entry, start int)
+	GenGlobalVars(declaredVars []Entry, start int) int
+	GenLocalVars(declaredVars []Entry, start int) int
 	LoadItem(Entry) Entry
 	GenVar(Entry) Entry
 	GenConst(Entry) Entry

@@ -46,7 +46,7 @@ func (wg *WasmGenerator) GenArray(p0Type P0Type) P0Type {
 // GenGlobalVars creates the code for declaring the global variables at the start of the file.
 // sc is a map of names to types. It represents all the global variable declarations.
 // start Represents TODO:
-func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) {
+func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) int {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
@@ -66,9 +66,10 @@ func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) {
 			}
 		}
 	}
+	return 0
 }
 
-func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) {
+func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) int {
 	for _, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
@@ -86,6 +87,7 @@ func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) {
 			}
 		}
 	}
+	return 0
 }
 
 // The returned value is nil

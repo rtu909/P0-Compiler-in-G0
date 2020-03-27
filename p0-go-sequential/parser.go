@@ -110,10 +110,37 @@ func typ() P0Type {
 }
 
 func typedIds(kind func(P0Type) P0Type) {
-	// TODO:
+	var tid []string
+	if sym == IDENT {
+		tid = make([]string, 1)
+		tid[0] = val.(string)
+	} else {
+		mark("identifier expected")
+		tid = make([]string, 0)
+	}
+	for sym == COMMA {
+		getSym()
+		if sym == IDENT {
+			tid = append(tid, val.(string))
+			getSym()
+		} else {
+			mark("identifier expected")
+		}
+	}
+	if sym == COLON {
+		getSym()
+		tp := typ()
+		if tp != nil {
+			for _, attrName := range tid {
+				st.NewDecl(attrName, kind(tp))
+			}
+		}
+	} else {
+		mark("':' expected")
+	}
 }
 
-func declarations(generatorFunc func(declaredVars []Entry, start int)) int {
+func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 	var varsize int
 	if !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym)) {
 		mark("'begin' or declaration expected")
@@ -274,8 +301,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	case Mips:
 		// Prepare
 	default:
-		fmt.Printf("target recognized but is not supported")
-		panic(nil)
+		panic("target recognized, but it is not supported")
 	}
 	ScannerInit(sourceCode)
 	st = new(SliceMapSymbolTable)
