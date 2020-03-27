@@ -99,12 +99,7 @@ func simpleExpression() Entry {
 	return nil
 }
 
-// TODO: IMPLEMENT
 func expression() Entry {
-	return nil
-}
-
-func compoundStatement() Entry {
 	x := simpleExpression()
 	for sym == EQ || sym == NE || sym == LT || sym == LE || sym == GT || sym == GE {
 		op := sym
@@ -156,6 +151,10 @@ func compoundStatement() Entry {
 		}
 	}
 	return x
+}
+
+func compoundStatement() Entry {
+	return nil // TODO:
 }
 
 func statement() Entry {
