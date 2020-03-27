@@ -21,7 +21,7 @@ type CodeGenerator interface {
 	GenAssign(x, y Entry)
 	GenProgEntry()
 	GenProgExit() string
-	GenProcStart(identity string, functionParameters []Entry)
+	GenProcStart(identity string, functionParameters []Entry) int
 	GenProcEntry(identity string, parsize, localsize int)
 	GenProcExit(x Entry, parsize, localsize int)
 	GenActualPara(actualparameter, formalparameter Entry, parameterNumber int)

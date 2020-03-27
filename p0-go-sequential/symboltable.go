@@ -414,7 +414,7 @@ type P0Proc struct {
 	p0type     P0Type
 	name       string
 	level      int
-	parameters []P0Type
+	parameters []Entry
 }
 
 func (p0proc *P0Proc) GetP0Type() P0Type {

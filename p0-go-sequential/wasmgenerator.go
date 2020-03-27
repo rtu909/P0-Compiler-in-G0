@@ -362,7 +362,7 @@ func (wg *WasmGenerator) GenProgExit() string {
 // GenProcStart generates the beginning of a procedure declaration
 // ident is the name of the procedure
 // fp is a slice holding the formal parameters of the procedure
-func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) {
+func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) int {
 	if wg.currentLevel > 0 {
 		mark("WASM: no nested procedures")
 	}
@@ -388,6 +388,7 @@ func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) {
 		funcDecl += "(param $" + entry.GetName() + " i32) "
 	}
 	wg.asm = append(wg.asm, funcDecl)
+	return 0
 }
 
 func (wg *WasmGenerator) GenProcEntry(ident string, parsize, localsize int) {

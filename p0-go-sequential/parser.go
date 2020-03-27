@@ -94,9 +94,9 @@ func expression() Entry {
 	return nil
 }
 
-func compoundStatement() {
+func compoundStatement() Entry {
 	// TODO:
-	// Doesn't need to return anything; the result is unused
+	return nil
 }
 
 func statement() Entry {
@@ -113,7 +113,8 @@ func typedIds(kind func(P0Type) P0Type) {
 	// TODO:
 }
 
-func declarations() int {
+func declarations(generatorFunc func(declaredVars []Entry, start int)) int {
+	var varsize int
 	if !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym)) {
 		mark("'begin' or declaration expected")
 		for !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym) || doesContain(STRONGSYMS[:], sym)) {
@@ -157,8 +158,53 @@ func declarations() int {
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 		getElseMark(sym == SEMICOLON, "; expected")
 	}
-	cg.GenGlobalVars(st.TopScope(), start)
-	return 0 // TODO:
+	varsize = generatorFunc(st.TopScope(), start)
+	for sym == PROCEDURE {
+		getSym()
+		getElseMark(sym == IDENT, "procedure name expected")
+		ident := val.(string)
+		st.NewDecl(ident, &P0Proc{nil, "", 0, nil})
+		st.OpenScope()
+		var fp []Entry
+		if sym == LPAREN {
+			getSym()
+			if sym == VAR || sym == IDENT {
+				if sym == VAR {
+					getSym()
+					typedIds(func(p0type P0Type) P0Type { return &P0Ref{p0type, "", 0, "", 0, 0} })
+				} else {
+					typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
+				}
+				for sym == SEMICOLON {
+					if sym == VAR {
+						getSym()
+						typedIds(func(p0type P0Type) P0Type { return &P0Ref{p0type, "", 0, "", 0, 0} })
+					} else {
+						typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
+					}
+				}
+			} else {
+				mark("Formal parameters expected")
+			}
+			// The function parameters are stored in the top scope. Make a copy for the symbol table declaration
+			fp = st.TopScope()
+			tmp := make([]Entry, len(fp))
+			copy(tmp, fp)
+			st.Find(ident).(*P0Proc).parameters = tmp
+			getElseMark(sym == RPAREN, ") expected")
+		} else {
+			fp = make([]Entry, 0)
+		}
+		parsize := cg.GenProcStart(ident, fp)
+		getElseMark(sym == SEMICOLON, "; expected")
+		localsize := declarations(cg.GenLocalVars)
+		cg.GenProcEntry(ident, parsize, localsize)
+		var x Entry = compoundStatement()
+		cg.GenProcExit(x, parsize, localsize)
+		st.CloseScope()
+		getElseMark(sym == SEMICOLON, "; expected")
+	}
+	return varsize
 }
 
 func program() string {
@@ -174,7 +220,7 @@ func program() string {
 	// The original program actually accessed the program name here
 	getElseMark(sym == IDENT, "Program name expected")
 	getElseMark(sym == SEMICOLON, "; expected")
-	declarations()
+	declarations(cg.GenGlobalVars)
 	cg.GenProgEntry( /*ident*/ ) // ident was passed in the og P0 compiler, but it is not used so we removed it
 	compoundStatement()
 	return cg.GenProgExit()
