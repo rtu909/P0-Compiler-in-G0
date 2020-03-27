@@ -407,6 +407,10 @@ func (p0const *P0Const) GetValue() interface{} {
 	return p0const.value
 }
 
+func (p0const *P0Const) SetValue(newVal int) {
+	p0const.value = newVal
+}
+
 // P0Proc represents a user-declared procedure in a P0 program.
 // It implements Entry so it can be stored on the symbol table.
 // It also has methods for accessing the list of parameters that need to be passed.
@@ -414,7 +418,7 @@ type P0Proc struct {
 	p0type     P0Type
 	name       string
 	level      int
-	parameters []Entry
+	parameters []P0Type
 }
 
 func (p0proc *P0Proc) GetP0Type() P0Type {

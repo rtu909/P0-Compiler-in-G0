@@ -31,9 +31,9 @@ func selector(x Entry) Entry {
 			if sym == IDENT {
 				asRec, isRec := x.GetP0Type().(*P0Record)
 				if isRec {
-					for f := range asRec.GetFields() {
+					for _, f := range asRec.GetFields() {
 						if f == val {
-							// x = CG.genSelect(x, f);
+							x = cg.GenSelect(x, f)
 							break
 						} else {
 							mark("not a field")
@@ -89,14 +89,73 @@ func factor() {
 	}
 }
 
+func term() Entry {
+	// TODO: Implement
+	return nil
+}
+
+func simpleExpression() Entry {
+	// TODO: Implement
+	return nil
+}
+
 // TODO: IMPLEMENT
 func expression() Entry {
 	return nil
 }
 
 func compoundStatement() Entry {
-	// TODO:
-	return nil
+	x := simpleExpression()
+	for sym == EQ || sym == NE || sym == LT || sym == LE || sym == GT || sym == GE {
+		op := sym
+		getSym()
+		y := simpleExpression()
+		_, xIsBool := x.GetP0Type().(*P0Bool)
+		_, yIsBool := y.GetP0Type().(*P0Bool)
+		_, xIsInt := x.GetP0Type().(*P0Int)
+		_, yIsInt := y.GetP0Type().(*P0Int)
+		if (xIsInt && yIsInt) || (xIsBool && yIsBool) {
+			xAsConst, xIsConst := x.(*P0Const)
+			yAsConst, yIsConst := y.(*P0Const)
+			if xIsConst && yIsConst {
+				// Perform some constant folding
+				// Useful conversion function
+				var bool2int func(bool) int = func(predicate bool) int {
+					if predicate {
+						return 1
+					}
+					return 0
+				}
+				switch op {
+				case EQ:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) == yAsConst.GetValue().(int)))
+					break
+				case NE:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) != yAsConst.GetValue().(int)))
+					break
+				case LT:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) < yAsConst.GetValue().(int)))
+					break
+				case LE:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) <= yAsConst.GetValue().(int)))
+					break
+				case GT:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) > yAsConst.GetValue().(int)))
+					break
+				case GE:
+					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) >= yAsConst.GetValue().(int)))
+					break
+				}
+				xAsConst.p0type = cg.GenBool(&P0Bool{})
+				x = xAsConst
+			} else {
+				x = cg.GenRelation(op, x, y)
+			}
+		} else {
+			mark("bad type")
+		}
+	}
+	return x
 }
 
 func statement() Entry {
