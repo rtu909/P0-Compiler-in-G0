@@ -105,8 +105,62 @@ func statement() Entry {
 }
 
 func typ() P0Type {
-	// TODO:
-	return nil
+	var typeToReturn P0Type
+	if !doesContain(FIRSTTYPE[:], sym) {
+		mark("type expected")
+		for !(doesContain(FIRSTTYPE[:], sym) || doesContain(FOLLOWTYPE[:], sym) || doesContain(STRONGSYMS[:], sym)) {
+			getSym()
+		}
+	}
+	if sym == IDENT {
+		ident := val.(string)
+		typeToReturn, _ = st.Find(ident).(P0Type)
+		getSym()
+	} else if sym == ARRAY {
+		getSym()
+		getElseMark(sym == LBRAK, "'[' expected")
+		x := expression()
+		getElseMark(sym == PERIOD, "'.' expected")
+		getElseMark(sym == PERIOD, "'.' expected")
+		y := expression()
+		getElseMark(sym == RBRAK, "']' expected")
+		getElseMark(sym == OF, "'of' expected")
+		z := typ()
+		xAsConst, xIsConst := x.(*P0Const)
+		yAsConst, yIsConst := y.(*P0Const)
+		if !xIsConst || xAsConst.GetValue().(int) < 0 {
+			mark("bad lower bound")
+			typeToReturn = nil
+		} else if !yIsConst || yAsConst.GetValue().(int) <= xAsConst.GetValue().(int) {
+			mark("bad upper bound")
+			typeToReturn = nil
+		} else {
+			typeToReturn = cg.GenArray(&P0Array{
+				base:   z,
+				lower:  xAsConst.GetValue().(int),
+				length: yAsConst.GetValue().(int) - xAsConst.GetValue().(int) + 1,
+			})
+		}
+	} else if sym == RECORD {
+		getSym()
+		st.OpenScope()
+		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type: p0type} })
+		for sym == SEMICOLON {
+			getSym()
+			typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type: p0type} })
+		}
+		getElseMark(sym == END, "'end' expected")
+		r := st.TopScope()
+		rCasted := make([]P0Type, 0)
+		for _, val := range r {
+			rCasted = append(rCasted, val.(P0Type))
+		}
+		st.CloseScope()
+		typeToReturn = cg.GenRecord(&P0Record{fields: rCasted})
+	} else {
+		typeToReturn = nil
+	}
+	return typeToReturn
 }
 
 func typedIds(kind func(P0Type) P0Type) {
