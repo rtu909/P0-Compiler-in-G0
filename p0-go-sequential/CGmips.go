@@ -1,8 +1,6 @@
 package main
 
 import (
-	"container/list"
-	"go/types"
 	"strconv"
 )
 
@@ -127,7 +125,7 @@ func genGlobalVars(sc []P0Var, start int ){
 func genProgEntry(){
 	putInstr(".globl main", "")
 	putInstr(".ent main", "")
-	lab := []string
+	var lab [] string
 	putLab(lab, "main" )
 }
 
@@ -223,39 +221,47 @@ func testRange(x P0Const){
 }
 
 //todo
-func loadItemReg(x P0Type, r string){
-	if {
-		putMemOp("lw", r, x.GetName(), r)
-		releaseReg(x.GetName())
-	}else if {
-		testRange(x)
-		putOp("addi", r, R0, strconv.Itoa(x.GetLevel()))
-	}else if{
-		putOp("add", r, x.GetName(), R0)
+func loadItemReg(x interface{}, r string){
+	_, xisVar := x.(*P0Var)
+	_, xisConst := x.(*P0Const)
+	_, xisReg := x.(*Reg)
+	if xisVar{
+		putMemOp("lw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()))
+		releaseReg(x.(P0Var).GetRegister())
+	}else if xisConst{
+		testRange(x.(P0Const))
+		putOp("addi", r, R0, strconv.Itoa(x.(P0Const).GetValue().(int)))
+	}else if xisReg{
+		putOp("add", r, x.(Reg).reg, R0)
 	} else{
 		panic("loadItemReg has problems")
 	}
 }
 
 //todo
-func loadItem(x P0Type) Reg{
-	if {
-		r := R0
+func loadItem(x interface{}) Reg{
+	_, xisConst := x.(*P0Const)
+	r := ""
+	if xisConst && x.(P0Const).GetValue() == 0{
+		r = R0
 	} else{
-		r := obtainReg()
+		r = obtainReg()
 		loadItemReg(x, r)
 	}
-	//Reg(x.GetP0Type(), r)
+	return Reg{x.(P0Const).GetP0Type(), r}
 }
 
 //todo
-func loadBool(x P0Type) Cond{
-	if {
-		r := R0
+func loadBool(x interface{}) Cond{
+	_, xisConst := x.(*P0Const)
+	r := ""
+	if xisConst && x.(P0Const).GetValue() == 0{
+		r = R0
 	} else{
 		r := obtainReg()
 		loadItemReg(x, r)
 	}
+	return NewCond(NE, r, R0, "")
 }
 
 func put(cd string, x interface{}, y interface{}) interface{} {
@@ -302,7 +308,7 @@ func put(cd string, x interface{}, y interface{}) interface{} {
 	return x
 }
 
-func genVar(x P0Type) interface{}{
+func genVar(x Entry) interface{}{
 	var y interface{}
 
 	if (0 < x.GetLevel()) && (x.GetLevel() < curlev){
@@ -323,18 +329,18 @@ func genVar(x P0Type) interface{}{
 
 		var xinReg bool
 		for i := 0; i < len(regList); i++{
-			if x.(P0Ref).GetRegister() == regList[i]{
+			if x.(*P0Ref).GetRegister() == regList[i]{
 				xinReg = true
 			}
 		}
 		if xinReg{
-			y.SetRegister(x.(P0Ref).GetRegister())
+			y.SetRegister(x.(*P0Ref).GetRegister())
 			y.SetAddress(0)
 		} else{
 			y.SetRegister(obtainReg())
 			y.SetAddress(0)
 
-			putMemOp("lw", y.GetRegister(), x.(P0Ref).GetRegister(), x.(P0Ref).GetAddress())
+			putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
 		}
 	} else if xisVar {
 		var regList []string
@@ -346,20 +352,20 @@ func genVar(x P0Type) interface{}{
 
 		var xinReg bool
 		for i := 0; i < len(regList); i++{
-			if x.(P0Ref).GetRegister() == regList[i]{
+			if x.(*P0Ref).GetRegister() == regList[i]{
 				xinReg = true
 			}
 		}
 		if xinReg{
-			y := Reg{
+			y = Reg{
 				tp:  x.GetP0Type(),
-				reg: x.(P0Var).GetRegister(),
+				reg: x.(*P0Var).GetRegister(),
 			}
 		} else{
 			y := P0Var{p0type:x.GetP0Type()}
 			y.SetLevel(x.GetLevel())
-			y.SetRegister(x.(P0Var).GetRegister())
-			y.SetAddress(x.(P0Var).GetAddress())
+			y.SetRegister(x.(*P0Var).GetRegister())
+			y.SetAddress(x.(*P0Var).GetAddress())
 		}
 
 	} else{
@@ -382,7 +388,7 @@ func negate(cd int)int{
 
 func condOp(cd int) string{
 	var dict = map[int]string{
-		EQ: "beq", NE: "bne", LT: GE, LE: GT, GT: LE, GE: LT,
+		EQ: "beq", NE: "bne", LT: "blt", LE: "ble", GT: "bgt", GE: "bge",
 	}
 	return dict[cd]
 }
@@ -399,7 +405,9 @@ func genUnaryOp(op int, x interface{}) interface{}{
 		if !xisCond{
 			x = loadBool(x.(P0Type))
 		}
-		x.(Cond).SetCondition(negate(x.(Cond).cond))
+		str1 := x.(Cond).cond
+		str2, _ := strconv.Atoi(str1)
+		x.(Cond).SetCondition(strconv.Itoa(negate(str2)))
 		x.(Cond).SetLabA(x.(Cond).labB)
 		x.(Cond).SetLabB(x.(Cond).labA)
 	} else if op == AND{
@@ -444,13 +452,17 @@ func genBinaryOp(op int, x Cond, y interface{}) interface{}{
 		if !yisCond{
 			y = loadBool(y.(P0Type))
 		}
-		//todo
+		for i := 0; i < len(x.labA); i++{
+			y.(Cond).SetLabA(append(y.(Cond).labA, x.labA[i]))
+		}
 	} else if op == OR {
 		_, yisCond := y.(*Cond)
 		if !yisCond{
 			y = loadBool(y.(P0Type))
 		}
-		//todo
+		for i := 0; i < len(x.labB); i++{
+			y.(Cond).SetLabB(append(y.(Cond).labB, x.labB[i]))
+		}
 	} else{
 		panic("genBinaryOp failed")
 	}
@@ -476,23 +488,23 @@ func genSelect(x P0Ref, f P0Var) P0Ref{
 	return x
 }
 
-func genIndex(x interface{}, y interface{}) interface{}{
+func genIndex(x Entry, y interface{}) interface{}{
 	_, yisConst := y.(*P0Const)
 	if yisConst{
-		offset := (y.(P0Const).GetValue().(int) - x.(P0Var).p0type.(int)) * x.(P0Var).GetSize()
-		x.(P0Var).SetAddress(x.(P0Var).GetAddress() + offset)
+		offset := (y.(P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(int)) * x.(*P0Var).GetSize()
+		x.(*P0Var).SetAddress(x.(*P0Var).GetAddress() + offset)
 	} else{
 		_, yisReg := y.(*Reg)
 		if !yisReg{
 			y = loadItem(y.(P0Type))
 		}
-		putOp("sub", y.(Reg).reg, y.(Reg).reg, x.(P0Var).GetP0Type())
-		putOp("mul", y.(Reg).reg, y.(Reg).reg, x.(P0Var).GetSize())
-		if x.(P0Var).GetRegister() != R0{
-			putOp("sub", y.(Reg).reg, x.(P0Var).reg, y.(Reg).reg)
-			releaseReg(x.(Reg).reg)
+		putOp("sub", y.(Reg).reg, y.(Reg).reg, x.(*P0Var).GetP0Type())
+		putOp("mul", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetSize()))
+		if x.(*P0Var).GetRegister() != R0{
+			putOp("sub", y.(Reg).reg, x.(*P0Var).reg, y.(Reg).reg)
+			releaseReg(x.(*P0Var).GetRegister())
 		}
-		x.(P0Var).SetRegister(y.(Reg).reg)
+		x.(*P0Var).SetRegister(y.(Reg).reg)
 	}
 	x.(P0Var).p0type = x.(P0Var).GetSize() //idk what to do here
 	return x
@@ -626,8 +638,45 @@ func genProcExit(parsize int, localsize int){
 	putInstr("jr $ra", "")
 }
 
-func genActualPara(){
+func genActualPara(ap interface{}, fp Entry, n int){
+	_, fpisRef := fp.(*P0Ref)
+	r := ""
+	if fpisRef{
+		if ap.(P0Var).GetAddress() == 0{
+			if n < 4{
+				putOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+			}else{
+				putMemOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+			}
+			releaseReg(ap.(P0Var).GetRegister())
+		} else{
+			if n < 4{
+				putMemOp("la", "$a" + strconv.Itoa(n), ap.(P0Var).GetRegister(), strconv.Itoa(ap.(P0Var).GetAddress()))
+			} else{
+				r = obtainReg()
+				putMemOp("la", r, ap.(P0Var).GetRegister(), strconv.Itoa(ap.(P0Var).GetAddress()))
+				putMemOp("sw", r, SP, strconv.Itoa(-4*(n+1-4)))
+				releaseReg(r)
+			}
+		}
+	} else{
+		_, apisCond := ap.(*Cond)
+		_, apisReg := ap.(*Reg)
+		if !apisCond{
+			if n < 4{
+				loadItemReg(ap, "$a" + strconv.Itoa(n))
+			} else{
+				if !apisReg{
+					ap = loadItem(ap)
+				}
+				putMemOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+				releaseReg(ap.(Reg).reg)
+			}
+		} else{
+			mark("unsupported parameter type")
+		}
 
+	}
 }
 
 func genCall(pr P0Proc){
