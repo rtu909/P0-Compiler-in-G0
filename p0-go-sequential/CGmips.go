@@ -242,36 +242,36 @@ func (cg * CGmips) loadItemReg(x interface{}, r string) {
 }
 
 //todo
-func loadItem(x interface{}) Reg {
+func (cg * CGmips) loadItem(x interface{}) Reg {
 	_, xisConst := x.(*P0Const)
 	r := ""
 	if xisConst && x.(P0Const).GetValue() == 0 {
 		r = R0
 	} else {
-		r = obtainReg()
-		loadItemReg(x, r)
+		r = cg.obtainReg()
+		cg.loadItemReg(x, r)
 	}
 	return Reg{x.(P0Const).GetP0Type(), r}
 }
 
 //todo
-func loadBool(x interface{}) Cond {
+func (cg * CGmips) loadBool(x interface{}) Cond {
 	_, xisConst := x.(*P0Const)
 	r := ""
 	if xisConst && x.(P0Const).GetValue() == 0 {
 		r = R0
 	} else {
-		r := obtainReg()
-		loadItemReg(x, r)
+		r := cg.obtainReg()
+		cg.loadItemReg(x, r)
 	}
 	return NewCond(NE, r, R0, "")
 }
 
-func put(cd string, x interface{}, y interface{}) interface{} {
+func (cg * CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	_, xisReg := x.(*Reg)
 	r := ""
 	if !xisReg {
-		x = loadItem(x.(P0Type))
+		x = cg.loadItem(x.(P0Type))
 	} else {
 		var regList []string
 		regList = append(regList, R0)
@@ -290,7 +290,7 @@ func put(cd string, x interface{}, y interface{}) interface{} {
 		}
 		if regFound {
 			r = x.reg
-			x.reg = obtainReg()
+			x.reg = cg.obtainReg()
 		} else {
 			r = x.reg
 		}
@@ -298,23 +298,23 @@ func put(cd string, x interface{}, y interface{}) interface{} {
 	_, yisConst := y.(*P0Const)
 	if yisConst {
 		y := y.(P0Const)
-		testRange(y)
-		putOp(cd, x.(Reg).reg, r, y.GetValue().(string))
+		cg.testRange(y)
+		cg.putOp(cd, x.(Reg).reg, r, y.GetValue().(string))
 	} else {
 		_, yisReg := y.(*Reg)
 		if !yisReg {
-			y = loadItem(y.(P0Type))
+			y = cg.loadItem(y.(P0Type))
 		}
-		putOp(cd, x.(Reg).reg, r, y.(Reg).reg)
-		releaseReg(y.(Reg).reg)
+		cg.putOp(cd, x.(Reg).reg, r, y.(Reg).reg)
+		cg.releaseReg(y.(Reg).reg)
 	}
 	return x
 }
 
-func genVar(x Entry) interface{} {
+func (cg * CGmips) genVar(x Entry) interface{} {
 	var y interface{}
 
-	if (0 < x.GetLevel()) && (x.GetLevel() < curlev) {
+	if (0 < x.GetLevel()) && (x.GetLevel() < cg.curlev) {
 		mark("level")
 	}
 	_, xisRef := x.(*P0Ref)
@@ -340,10 +340,10 @@ func genVar(x Entry) interface{} {
 			y.SetRegister(x.(*P0Ref).GetRegister())
 			y.SetAddress(0)
 		} else {
-			y.SetRegister(obtainReg())
+			y.SetRegister(cg.obtainReg())
 			y.SetAddress(0)
 
-			putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
+			cg.putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
 		}
 	} else if xisVar {
 		var regList []string
