@@ -95,8 +95,62 @@ func term() Entry {
 }
 
 func simpleExpression() Entry {
-	// TODO: Implement
-	return nil
+	var x Entry
+	if sym == PLUS {
+		getSym()
+		x = term()
+	} else if sym == MINUS {
+		getSym()
+		x = term()
+		_, xIsInt := x.GetP0Type().(*P0Int)
+		if !xIsInt {
+			mark("Bad type")
+		}
+	} else {
+		x = term()
+	}
+
+	for sym == PLUS || sym == MINUS || sym == OR {
+		var op = sym
+		getSym()
+
+		_, xIsConst1 := x.(*P0Const)
+		if op == OR && !xIsConst1 {
+			x = cg.GenUnaryOp(op, x)
+		}
+		var y = term()
+
+		_, xIsInt := x.GetP0Type().(*P0Int)
+		_, yIsInt := y.GetP0Type().(*P0Int)
+		_, xIsBool := x.GetP0Type().(*P0Bool)
+		_, yIsBool := y.GetP0Type().(*P0Bool)
+		xAsConst, xIsConst := x.(*P0Const)
+		yAsConst, yIsConst := y.(*P0Const)
+
+		if xIsInt && yIsInt && (op == PLUS || op == MINUS) {
+			if xIsConst && yIsConst {
+				if op == PLUS {
+					// x = x + y
+					xAsConst.SetValue(xAsConst.GetValue().(int) + yAsConst.GetValue().(int))
+				} else if op == MINUS {
+					// x = x - y
+					xAsConst.SetValue(xAsConst.GetValue().(int) - yAsConst.GetValue().(int))
+				}
+			} else {
+				x = cg.GenBinaryOp(op, x, y)
+			}
+		} else if xIsBool && yIsBool && op == OR {
+			if xIsConst {
+				// if x false, x = y
+				xAsConst.SetValue((yAsConst.GetValue().(int)))
+			} else {
+				x = cg.GenBinaryOp(OR, x, y)
+			}
+		} else {
+			mark("bad type")
+		}
+	}
+	return x
 }
 
 func expression() Entry {
@@ -473,14 +527,21 @@ func program() string {
 	return cg.GenProgExit()
 }
 
-// P0Primitive is an enumerated type that represents one of the built-in types in P0.
-// It is only meant to represent the base types; composite types are represented in P0Type
-type P0Target int
-
-const (
-	Wat P0Target = iota
-	Mips
-)
+func compileString(sourceCode string, destinationFilePath string, target P0Target) {
+	switch target {
+	case Wat:
+		// Prepare
+		cg = &WasmGenerator{}
+	case Mips:
+		// Prepare
+		cg = &CGmips{}
+	default:
+		panic("target recognized, but it is not supported")
+	}
+	ScannerInit(sourceCode)
+	st = new(SliceMapSymbolTable)
+	st.Init()
+}
 
 func compileFile(sourceFilePath string, target string) {
 	if strings.HasSuffix(sourceFilePath, ".p") {
@@ -494,6 +555,15 @@ func compileFile(sourceFilePath string, target string) {
 		panic(nil)
 	}
 }
+
+// P0Primitive is an enumerated type that represents one of the built-in types in P0.
+// It is only meant to represent the base types; composite types are represented in P0Type
+type P0Target int
+
+const (
+	Wat P0Target = iota
+	Mips
+)
 
 func toP0Target(target string) P0Target {
 	switch target {
@@ -511,22 +581,6 @@ func panicIfError(e interface{}) {
 	if e != nil {
 		panic(e)
 	}
-}
-
-func compileString(sourceCode string, destinationFilePath string, target P0Target) {
-	switch target {
-	case Wat:
-		// Prepare
-		cg = &WasmGenerator{}
-	case Mips:
-		// Prepare
-		cg = &CGmips{}
-	default:
-		panic("target recognized, but it is not supported")
-	}
-	ScannerInit(sourceCode)
-	st = new(SliceMapSymbolTable)
-	st.Init()
 }
 
 func doesContain(elements []int, e int) bool {
