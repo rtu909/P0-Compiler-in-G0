@@ -29,9 +29,9 @@ var A1 = "$a1"
 var A2 = "$a2"
 var A3 = "$a3"
 
-func genProgStart() {
-	curlev, label = 0, 0
-	regs = GPRegs
+func (cg *CGmips) GenProgStart() {
+	cg.curlev, cg.label = 0, 0
+	cg.regs = GPRegs
 	putInstr(".data", "")
 }
 
