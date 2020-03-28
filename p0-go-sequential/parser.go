@@ -704,6 +704,13 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	ScannerInit(sourceCode)
 	st = new(SliceMapSymbolTable)
 	st.Init()
+	p := program()
+	if p != "" && !error {
+		fmt.Print("HERE IS TEH CODEZ:")
+		fmt.Print(p)
+	} else {
+		print("Something went wrong in the parser and its not good :(")
+	}
 }
 
 func compileFile(sourceFilePath string, target string) {
