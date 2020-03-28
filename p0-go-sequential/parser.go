@@ -446,14 +446,15 @@ func statement() Entry {
 		y := statement()
 		if sym == ELSE {
 			_, xIsBool = x.GetP0Type().(*P0Bool)
+			var label string
 			if xIsBool {
-				y = cg.GenElse(x, y) // TODO: GenElse needs to return something
+				label = cg.GenElse(x, y) // TODO: GenElse needs to return something
 			}
 			getSym()
 			z := statement()
 			_, xIsBool = x.GetP0Type().(*P0Bool)
 			if xIsBool {
-				x = cg.GenIfElse(x, y, z)
+				x = cg.GenIfElse(label)
 			}
 		} else {
 			_, xIsBool = x.GetP0Type().(*P0Bool)
@@ -473,7 +474,8 @@ func statement() Entry {
 		y := statement()
 		_, xIsBool = x.GetP0Type().(*P0Bool)
 		if xIsBool {
-			x = cg.GenWhileDo(t, x, y)
+			cg.GenWhileDo(t, x, y)
+			x = nil
 		}
 	} else {
 		x = nil

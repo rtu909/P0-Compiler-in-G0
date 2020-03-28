@@ -123,13 +123,13 @@ func (cg *CGmips) GenArray(a P0Type) P0Type {
 func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) {
 	for i := len(declaredVars) - 1; i > start-1; i-- {
 		_, scisVar := declaredVars[i].(*P0Var)
-		if scisVar{
+		if scisVar {
 			declaredVars[i].(*P0Var).SetRegister(R0)
 			declaredVars[i].(*P0Var).SetAddress(declaredVars[i].GetSize())
 			var labs []string
 			labs = append(labs, strconv.Itoa(declaredVars[i].(*P0Var).GetAddress()))
 
-			cg.putLab(labs, ".space" + strconv.Itoa(declaredVars[i].GetSize()) )
+			cg.putLab(labs, ".space"+strconv.Itoa(declaredVars[i].GetSize()))
 		}
 	}
 	cg.putInstr(".text", "")
@@ -573,7 +573,7 @@ func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
 	return x
 }
 
-func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
+func (cg *CGmips) GenAssign(x, y Entry) {
 	_, xisVar := x.(*P0Var)
 	_, xisReg := x.(*Reg)
 	r := ""
@@ -581,26 +581,26 @@ func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 		_, yisVar := y.(*Cond)
 		_, yisReg := y.(*Reg)
 		if yisVar {
-			str1 := y.(Cond).cond
+			str1 := y.(*Cond).cond
 			str2, _ := strconv.Atoi(str1)
-			cg.putBranchOp(condOp(str2), y.(Cond).left.(string), y.(Cond).right.(string), y.(Cond).labA[0])
-			cg.releaseReg(y.(Cond).left.(string))
-			cg.releaseReg(y.(Cond).right.(string))
+			cg.putBranchOp(condOp(str2), y.(*Cond).left.(string), y.(*Cond).right.(string), y.(*Cond).labA[0])
+			cg.releaseReg(y.(*Cond).left.(string))
+			cg.releaseReg(y.(*Cond).right.(string))
 			r = cg.obtainReg()
-			cg.putLab(y.(Cond).labB, "")
+			cg.putLab(y.(*Cond).labB, "")
 			cg.putOp("addi", r, R0, strconv.Itoa(1))
 			var lab_list []string
 			lab := cg.newLabel()
 			lab_list = append(lab_list, lab)
 			cg.putInstr("b", lab)
-			cg.putLab(y.(Cond).labA, "")
+			cg.putLab(y.(*Cond).labA, "")
 			cg.putOp("addi", r, R0, strconv.Itoa(0))
 			cg.putLab(lab_list, "")
 		} else if !yisReg {
 			y = cg.loadItem(y.(P0Type))
-			r = y.(Reg).reg
+			r = y.(*Reg).reg
 		} else {
-			r = y.(Reg).reg
+			r = y.(*Reg).reg
 		}
 		cg.putMemOp("sw", r, x.(*P0Var).GetRegister(), strconv.Itoa(x.(*P0Var).GetAddress()))
 		cg.releaseReg(r)
@@ -608,24 +608,24 @@ func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 		_, yisVar := y.(*Cond)
 		_, yisReg := y.(*Reg)
 		if yisVar {
-			str1 := y.(Cond).cond
+			str1 := y.(*Cond).cond
 			str2, _ := strconv.Atoi(str1)
-			cg.putBranchOp(condOp(str2), y.(Cond).left.(string), y.(Cond).right.(string), y.(Cond).labA[0])
-			cg.releaseReg(y.(Cond).left.(string))
-			cg.releaseReg(y.(Cond).right.(string))
-			cg.putLab(y.(Cond).labB, "")
-			cg.putOp("addi", x.(Reg).reg, R0, strconv.Itoa(1))
+			cg.putBranchOp(condOp(str2), y.(*Cond).left.(string), y.(*Cond).right.(string), y.(*Cond).labA[0])
+			cg.releaseReg(y.(*Cond).left.(string))
+			cg.releaseReg(y.(*Cond).right.(string))
+			cg.putLab(y.(*Cond).labB, "")
+			cg.putOp("addi", x.(*Reg).reg, R0, strconv.Itoa(1))
 			var lab_list []string
 			lab := cg.newLabel()
 			lab_list = append(lab_list, lab)
 			cg.putInstr("b", lab)
-			cg.putLab(y.(Cond).labA, "")
-			cg.putOp("addi", x.(Reg).reg, R0, strconv.Itoa(0))
+			cg.putLab(y.(*Cond).labA, "")
+			cg.putOp("addi", x.(*Reg).reg, R0, strconv.Itoa(0))
 			cg.putLab(lab_list, "")
 		} else if !yisReg {
-			cg.loadItemReg(y.(P0Type), x.(Reg).reg)
+			cg.loadItemReg(y.(P0Type), x.(*Reg).reg)
 		} else {
-			cg.putOp("addi", x.(Reg).reg, y.(Reg).reg, strconv.Itoa(0))
+			cg.putOp("addi", x.(*Reg).reg, y.(*Reg).reg, strconv.Itoa(0))
 		}
 	} else {
 		panic("genAssign not working")
@@ -645,7 +645,7 @@ func (cg *CGmips) GenLocalVars(sc []Entry, start int) int {
 	return s
 }
 
-func (cg *CGmips) GenProcStart(fp []Entry) int {
+func (cg *CGmips) GenProcStart(string, fp []Entry) int {
 	cg.curlev = cg.curlev + 1
 	n := len(fp)
 	for i := 0; i < n; i++ {
@@ -693,7 +693,7 @@ func (cg *CGmips) GenProcEntry(ident string, parsize int, localsize int) {
 	cg.putOp("sub", SP, FP, strconv.Itoa(localsize+8))
 }
 
-func (cg *CGmips) GenProcExit(parsize int, localsize int) {
+func (cg *CGmips) GenProcExit(Entry, parsize int, localsize int) {
 	cg.curlev = cg.curlev - 1
 	cg.putOp("add", SP, FP, strconv.Itoa(parsize))
 	cg.putMemOp("lw", LNK, FP, strconv.Itoa(-8))
@@ -742,18 +742,18 @@ func (cg *CGmips) GenActualPara(ap, fp Entry, n int) {
 	}
 }
 
-func (cg *CGmips) GenCall(pr P0Proc) {
-	cg.putInstr("jal", pr.GetName())
+func (cg *CGmips) GenCall(procedure Entry) {
+	cg.putInstr("jal", procedure.GetName())
 }
 
-func (cg *CGmips) GenRead(x P0Var) {
+func (cg *CGmips) GenRead(x Entry) {
 	cg.putInstr("li $v0, 5", "")
 	cg.putInstr("syscall", "")
-	adr := strconv.Itoa(x.GetAddress())
-	cg.putMemOp("sw", "$v0", x.GetRegister(), adr)
+	adr := strconv.Itoa(x.(*P0Var).GetAddress())
+	cg.putMemOp("sw", "$v0", x.(*P0Var).GetRegister(), adr)
 }
 
-func (cg *CGmips) GenWrite(x P0Type) {
+func (cg *CGmips) GenWrite(x Entry) {
 	cg.loadItemReg(x, "$a0")
 	cg.putInstr("li $v0, 1", "")
 	cg.putInstr("syscall", "")
@@ -765,26 +765,27 @@ func (cg *CGmips) GenWriteln() {
 	cg.putInstr("syscall", "")
 }
 
-func (cg *CGmips) GenSeq() {
+func (cg *CGmips) GenSeq(Entry, Entry) {
 	//pass
 }
 
-func (cg *CGmips) GenThen(x interface{}) Entry {
+func (cg *CGmips) GenThen(x Entry) Entry {
 	_, xisCond := x.(*Cond)
 	if !xisCond {
-		x = cg.loadBool(x.(P0Type))
+		val := cg.loadBool(x)
+		x = &val
 	}
-	str1 := x.(Cond).cond
+	str1 := x.(*Cond).cond
 	str2, _ := strconv.Atoi(str1)
-	cg.putBranchOp(condOp(negate(str2)), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labA[0])
-	cg.releaseReg(x.(Cond).left.(string))
-	cg.releaseReg(x.(Cond).right.(string))
-	cg.putLab(x.(Cond).labB, "")
+	cg.putBranchOp(condOp(negate(str2)), x.(*Cond).left.(string), x.(*Cond).right.(string), x.(*Cond).labA[0])
+	cg.releaseReg(x.(*Cond).left.(string))
+	cg.releaseReg(x.(*Cond).right.(string))
+	cg.putLab(x.(*Cond).labB, "")
 	return x
 }
 
-func (cg *CGmips) GenIfThen(x Cond) {
-	cg.putLab(x.labA, "")
+func (cg *CGmips) GenIfThen(x Entry) {
+	cg.putLab(x.(*Cond).labA, "")
 }
 
 func (cg *CGmips) GenElse(x, y Entry) string {
@@ -794,23 +795,25 @@ func (cg *CGmips) GenElse(x, y Entry) string {
 	return lab
 }
 
-func (cg *CGmips) GenIfElse(x, y, z Entry) {
-	cg.putLab(y.(*Cond).labA[:], "")
+func (cg *CGmips) GenIfElse(label string) {
+	arr := make([]string, 1)
+	arr[0] = label
+	cg.putLab(arr, "")
 }
 
-func (cg *CGmips) GenWhile() {
+func (cg *CGmips) GenWhile() string {
 	lab := cg.newLabel()
 	var lab1 []string
 	lab1 = append(lab1, lab)
 	cg.putLab(lab1, "")
+	return lab
 }
 
 func (cg *CGmips) GenDo(x Entry) Entry {
 	return cg.GenThen(x)
 }
 
-func (cg *CGmips) GenWhileDo(lab, x, y Entry) Entry {
-	cg.putInstr("b", lab.(*Reg).reg)
+func (cg *CGmips) GenWhileDo(lab string, x, y Entry) {
+	cg.putInstr("b", lab)
 	cg.putLab(x.(*Cond).labA, "")
-	return nil
 }
