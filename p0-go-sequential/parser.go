@@ -549,6 +549,7 @@ func typedIds(kind func(P0Type) P0Type) {
 	if sym == IDENT {
 		tid = make([]string, 1)
 		tid[0] = val.(string)
+		getSym()
 	} else {
 		mark("identifier expected")
 		tid = make([]string, 0)
@@ -617,6 +618,7 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 	start := len(st.TopScope())
 	for sym == VAR {
 		getSym()
+
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 		getElseMark(sym == SEMICOLON, "; expected")
 	}
