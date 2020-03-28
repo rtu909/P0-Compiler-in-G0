@@ -373,7 +373,11 @@ func statement() Entry {
 				if doesContain(FIRSTEXPRESSION[:], sym) {
 					y = expression()
 					if i < len(fp) {
-						if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
+						_, paramIsInt := fp[i].GetP0Type().(*P0Int)
+						_, actualParamIsInt := y.GetP0Type().(*P0Int)
+						_, paramIsBool := fp[i].GetP0Type().(*P0Bool)
+						_, actualParamIsBool := y.GetP0Type().(*P0Bool)
+						if (paramIsInt && actualParamIsInt) || (paramIsBool && actualParamIsBool) { // TODO: How to do this properly in Go?
 							if xIsProc {
 								cg.GenActualPara(y, fp[i], i)
 							}
