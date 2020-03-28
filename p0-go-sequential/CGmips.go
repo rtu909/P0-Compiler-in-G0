@@ -491,14 +491,14 @@ func genSelect(x P0Ref, f P0Var) P0Ref{
 func genIndex(x Entry, y interface{}) interface{}{
 	_, yisConst := y.(*P0Const)
 	if yisConst{
-		offset := (y.(P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(int)) * x.(*P0Var).GetSize()
+		offset := (y.(P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(*P0Array).lower) * x.(*P0Var).GetSize()
 		x.(*P0Var).SetAddress(x.(*P0Var).GetAddress() + offset)
-	} else{
+	} else {
 		_, yisReg := y.(*Reg)
 		if !yisReg{
 			y = loadItem(y.(P0Type))
 		}
-		putOp("sub", y.(Reg).reg, y.(Reg).reg, x.(*P0Var).GetP0Type())
+		putOp("sub", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetP0Type().(*P0Array).lower))
 		putOp("mul", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetSize()))
 		if x.(*P0Var).GetRegister() != R0{
 			putOp("sub", y.(Reg).reg, x.(*P0Var).reg, y.(Reg).reg)
@@ -506,7 +506,8 @@ func genIndex(x Entry, y interface{}) interface{}{
 		}
 		x.(*P0Var).SetRegister(y.(Reg).reg)
 	}
-	x.(P0Var).p0type = x.(P0Var).GetSize() //idk what to do here
+	//p_0type := x.(*P0Array).GetElementType()
+	x = &P0Ref{x.(*P0Array).GetElementType(), x.GetName(), x.GetLevel(), "", 0, 0}
 	return x
 }
 
