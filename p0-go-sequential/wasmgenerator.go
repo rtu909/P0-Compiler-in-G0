@@ -285,18 +285,17 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 					arrayType.GetElementType().GetSize())
 			xAsVar.p0type = xAsVar.GetP0Type().(*P0Array).GetElementType()
 			return xAsVar
-		} else {
-			wg.LoadItem(y)
-			if arrayType.GetLowerBound() != 0 {
-				wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
-				wg.asm = append(wg.asm, "i32.sub")
-			}
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
-			wg.asm = append(wg.asm, "i32.mul")
-			wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
-			wg.asm = append(wg.asm, "i32.add")
-			x = &P0Ref{arrayType.GetElementType(), "", -1, "", 0, 0}
 		}
+		wg.LoadItem(y)
+		if arrayType.GetLowerBound() != 0 {
+			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.sub")
+		}
+		wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+		wg.asm = append(wg.asm, "i32.mul")
+		wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
+		wg.asm = append(wg.asm, "i32.add")
+		x = &P0Ref{arrayType.GetElementType(), "", -1, "", 0, 0}
 	} else {
 		if x.GetLevel() == wg.currentLevel {
 			wg.LoadItem(x)

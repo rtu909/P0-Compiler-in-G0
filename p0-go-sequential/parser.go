@@ -221,13 +221,40 @@ func statement() Entry {
 				if doesContain(FIRSTEXPRESSION[:], sym) {
 					y := expression()
 					if i < len(fp) {
-						_, fpIsBool := fp[i].(*P0Bool)
-						_, fpIsInt := fp[i].(*P0Int)
-						_, yIsBool := y.GetP0Type().(*P0Bool)
-						_, yIsInt := y.GetP0Type().(*P0Int)
-						if (fpIsBool && yIsBool) || (fpIsInt && yIsInt) {
-							// TODO:
+						if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
+							if xIsProc {
+								cg.GenActualPara(y, fp[i], i)
+							}
+						} else {
+							mark("illegal parameter mode")
 						}
+					} else {
+						mark("extra parameter")
+					}
+					i++
+					for sym == COMMA {
+						getSym()
+						y := expression()
+						if i < len(fp) {
+							if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
+								if xIsProc {
+									cg.GenActualPara(y, fp[i], i)
+								}
+							} else {
+								mark("illegal parameter mode")
+							}
+						} else {
+							mark("extra parameter")
+						}
+						i++
+					}
+					getElseMark(sym == RPAREN, "')' expected")
+				}
+				if i < len(fp) {
+					mark("too few parameters")
+				} else if !xIsProc { // x is P0StdProc
+					if x.GetName() == "read" {
+						x = cg.GenRead(y) // TODO: continue from here
 					}
 				}
 			}
