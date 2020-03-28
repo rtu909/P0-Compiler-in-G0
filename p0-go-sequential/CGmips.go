@@ -120,7 +120,7 @@ func (cg *CGmips) GenArray(a P0Type) P0Type {
 }
 
 //todo
-func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) {
+func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) int {
 	for i := len(declaredVars) - 1; i > start-1; i-- {
 		_, scisVar := declaredVars[i].(*P0Var)
 		if scisVar{
@@ -133,6 +133,7 @@ func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) {
 		}
 	}
 	cg.putInstr(".text", "")
+	return 0
 }
 
 func (cg *CGmips) GenProgEntry() {
@@ -314,7 +315,7 @@ func (cg *CGmips) loadItem(x interface{}) *Reg {
 }
 
 //todo
-func (cg *CGmips) loadBool(x interface{}) Cond {
+func (cg *CGmips) loadBool(x interface{}) interface{} {
 	_, xisConst := x.(*P0Const)
 	r := ""
 	if xisConst && x.(*P0Const).GetValue() == 0 {
@@ -460,70 +461,70 @@ func (cg *CGmips) GenUnaryOp(op int, entry Entry) Entry {
 	_, xisCond := entry.(*Cond)
 	if op == MINUS {
 		if xisVar {
-			entry = cg.loadItem(entry.(P0Type))
+			entry = cg.loadBool(entry).(Entry)
 		}
-		cg.putOp("sub", entry.(*P0Var).GetRegister(), R0, x.(*P0Var).GetRegister())
+		cg.putOp("sub", entry.(*P0Var).GetRegister(), R0, entry.(*P0Var).GetRegister())
 	} else if op == NOT {
 		if !xisCond {
-			entry = cg.loadBool(entry.(P0Type))
+			entry = cg.loadBool(entry).(Entry)
 		}
-		str1 := entry.(Cond).cond
+		str1 := entry.(*Cond).cond
 		str2, _ := strconv.Atoi(str1)
-		x.(*Cond).SetCondition(strconv.Itoa(negate(str2)))
-		x.(*Cond).SetLabA(x.(Cond).labB)
-		x.(*Cond).SetLabB(x.(Cond).labA)
+		entry.(*Cond).SetCondition(strconv.Itoa(negate(str2)))
+		entry.(*Cond).SetLabA(entry.(*Cond).labB)
+		entry.(*Cond).SetLabB(entry.(*Cond).labA)
 	} else if op == AND {
 		if !xisCond {
-			x = cg.loadBool(x.(P0Type))
+			entry = cg.loadBool(entry).(Entry)
 		}
-		str1 := x.(Cond).cond
+		str1 := entry.(*Cond).cond
 		str2, _ := strconv.Atoi(str1)
-		cg.putBranchOp(condOp(negate(str2)), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labA[0])
-		cg.releaseReg(x.(Cond).left.(string))
-		cg.releaseReg(x.(Cond).right.(string))
-		cg.putLab(x.(Cond).labB, "")
+		cg.putBranchOp(condOp(negate(str2)), entry.(*Cond).left.(string), entry.(*Cond).right.(string), entry.(*Cond).labA[0])
+		cg.releaseReg(entry.(*Cond).left.(string))
+		cg.releaseReg(entry.(*Cond).right.(string))
+		cg.putLab(entry.(*Cond).labB, "")
 	} else if op == OR {
 		if !xisCond {
-			x = cg.loadBool(x.(P0Type))
+			entry = cg.loadBool(entry).(Entry)
 		}
-		str1 := x.(Cond).cond
+		str1 := entry.(*Cond).cond
 		str2, _ := strconv.Atoi(str1)
-		cg.putBranchOp(condOp(str2), x.(Cond).left.(string), x.(Cond).right.(string), x.(Cond).labB[0])
-		cg.releaseReg(x.(Cond).left.(string))
-		cg.releaseReg(x.(Cond).right.(string))
-		cg.putLab(x.(Cond).labA, "")
+		cg.putBranchOp(condOp(str2), entry.(*Cond).left.(string), entry.(*Cond).right.(string), entry.(*Cond).labB[0])
+		cg.releaseReg(entry.(*Cond).left.(string))
+		cg.releaseReg(entry.(*Cond).right.(string))
+		cg.putLab(entry.(*Cond).labA, "")
 	} else {
 		panic("get unary op failed")
 	}
-	return x
+	return entry
 }
 
-func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
+func (cg *CGmips) GenBinaryOp(op int, x Entry, y Entry) Entry {
 	if op == PLUS {
-		y = cg.put("add", x, y)
+		y = cg.put("add", x, y).(Entry)
 	} else if op == MINUS {
-		y = cg.put("sub", x, y)
+		y = cg.put("sub", x, y).(Entry)
 	} else if op == TIMES {
-		y = cg.put("mul", x, y)
+		y = cg.put("mul", x, y).(Entry)
 	} else if op == DIV {
-		y = cg.put("div", x, y)
+		y = cg.put("div", x, y).(Entry)
 	} else if op == MOD {
-		y = cg.put("mod", x, y)
+		y = cg.put("mod", x, y).(Entry)
 	} else if op == AND {
 		_, yisCond := y.(*Cond)
 		if !yisCond {
-			y = cg.loadBool(y.(P0Type))
+			y = cg.loadBool(y).(Entry)
 		}
-		for i := 0; i < len(x.labA); i++ {
-			y.(*Cond).SetLabA(append(y.(Cond).labA, x.labA[i])) // FIXME:
+		for i := 0; i < len(x.(*Cond).labA); i++ {
+			y.(*Cond).SetLabA(append(y.(*Cond).labA, x.(*Cond).labA[i])) // FIXME:
 		}
 	} else if op == OR {
 		_, yisCond := y.(*Cond)
 		if !yisCond {
-			y = cg.loadBool(y.(P0Type))
+			y = cg.loadBool(y).(Entry)
 		}
-		for i := 0; i < len(x.labB); i++ {
-			y.(*Cond).SetLabB(append(y.(Cond).labB, x.labB[i])) // FIXME:
+		for i := 0; i < len(x.(*Cond).labB); i++ {
+			y.(*Cond).SetLabB(append(y.(*Cond).labB, x.(*Cond).labB[i])) // FIXME:
 		}
 	} else {
 		panic("genBinaryOp failed")
@@ -532,7 +533,7 @@ func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
 	return y
 }
 
-func (cg *CGmips) GenRelation(op int, x interface{}, y interface{}) Cond {
+func (cg *CGmips) GenRelation(op int, x Entry, y Entry) Entry {
 	_, xisReg := x.(*Reg)
 	_, yisReg := y.(*Reg)
 	if !xisReg {
@@ -541,13 +542,14 @@ func (cg *CGmips) GenRelation(op int, x interface{}, y interface{}) Cond {
 	if !yisReg {
 		y = cg.loadItem(y.(P0Type))
 	}
-	return NewCond(op, x.(Reg).reg, y.(Reg).reg, "")
+	x_Entry := cg.NewCond(op, x.(*Reg).reg, y.(*Reg).reg, "")
+	return &x_Entry
 }
 
-func (cg *CGmips) GenSelect(x P0Ref, f P0Var) P0Ref {
-	x.p0type = f.p0type
-	x.adr = x.adr + f.offset
-	return x
+func (cg *CGmips) GenSelect(record Entry, field Entry) Entry {
+	record.(*P0Var).p0type = field.(*P0Var).p0type
+	record.(*P0Var).SetAddress(record.(*P0Var).GetAddress() + record.(*P0Var).GetOffset())
+	return record
 }
 
 func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
