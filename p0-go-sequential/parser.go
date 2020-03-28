@@ -76,7 +76,7 @@ func selector(x Entry) Entry {
 	return x
 }
 
-func factor() {
+func factor() Entry {
 	if !doesContain(FIRSTFACTOR[:], sym) {
 		mark("expression expected")
 		for !(doesContain(FOLLOWFACTOR[:], sym) || doesContain(STRONGSYMS[:], sym) ||
@@ -90,8 +90,51 @@ func factor() {
 }
 
 func term() Entry {
-	// TODO: Implement
-	return nil
+	var x = factor()
+
+	for sym == TIMES || sym == DIV || sym == MOD || sym == AND {
+		var op = sym
+		getSym()
+
+		_, xIsConst1 := x.(*P0Const)
+		if op == AND && !xIsConst1 {
+			x = cg.GenUnaryOp(AND, x)
+		}
+		xAsConst, xIsConst := x.(*P0Const)
+		_, xIsInt := x.GetP0Type().(*P0Int)
+		_, xIsBool := x.GetP0Type().(*P0Bool)
+
+		var y = factor()
+		_, yIsBool := y.GetP0Type().(*P0Bool)
+		_, yIsInt := y.GetP0Type().(*P0Int)
+		yAsConst, yIsConst := y.(*P0Const)
+
+		if xIsInt && yIsInt {
+			if xIsConst && yIsConst {
+				if op == TIMES {
+					xAsConst.SetValue(xAsConst.GetValue().(int) * yAsConst.GetValue().(int))
+				} else if op == DIV {
+					xAsConst.SetValue(xAsConst.GetValue().(int) / yAsConst.GetValue().(int))
+				} else if op == MOD {
+					xAsConst.SetValue(xAsConst.GetValue().(int) % yAsConst.GetValue().(int))
+				}
+			} else {
+				x = cg.GenBinaryOp(op, x, y)
+			}
+		} else if xIsBool && yIsBool {
+			if xIsConst {
+				// if x false, x = y
+				if xAsConst.GetValue().(int) == 1 {
+					xAsConst.SetValue(yAsConst.GetValue().(int))
+				}
+			} else {
+				x = cg.GenBinaryOp(AND, x, y)
+			}
+		} else {
+			mark("bad type")
+		}
+	}
+	return x
 }
 
 func simpleExpression() Entry {
@@ -108,6 +151,7 @@ func simpleExpression() Entry {
 		}
 	} else {
 		x = term()
+
 	}
 
 	for sym == PLUS || sym == MINUS || sym == OR {
@@ -140,9 +184,13 @@ func simpleExpression() Entry {
 				x = cg.GenBinaryOp(op, x, y)
 			}
 		} else if xIsBool && yIsBool && op == OR {
+
 			if xIsConst {
 				// if x false, x = y
-				xAsConst.SetValue((yAsConst.GetValue().(int)))
+				if xAsConst.GetValue().(int) == 0 {
+					xAsConst.SetValue(yAsConst.GetValue().(int))
+				}
+
 			} else {
 				x = cg.GenBinaryOp(OR, x, y)
 			}
