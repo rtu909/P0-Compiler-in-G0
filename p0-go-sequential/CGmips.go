@@ -17,11 +17,7 @@ type CGmips struct {
 	asm    []Triple
 }
 
-var curlev int
-var label int
 var GPRegs = []string{"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8"}
-var regs []string
-var asm []Triple
 
 //reserved registers
 var R0 = "$0"

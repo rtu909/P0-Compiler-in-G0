@@ -520,6 +520,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 		cg = &WasmGenerator{}
 	case Mips:
 		// Prepare
+		cg = &CGmips{}
 	default:
 		panic("target recognized, but it is not supported")
 	}
