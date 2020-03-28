@@ -121,7 +121,8 @@ func identKW() {
 	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
 		getChar()
 	}
-	val = source[start:index] //originally -1
+	val = source[start : index-1] //originally -1
+	fmt.Println(val)
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
 	fmt.Println(sym)
