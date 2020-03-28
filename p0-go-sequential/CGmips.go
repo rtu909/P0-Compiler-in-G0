@@ -168,12 +168,36 @@ func (cg *CGmips) newLabel() string {
 	return ("L" + strconv.Itoa(cg.label))
 }
 
+// Reg is used like an Entry in the symbol table, so Reg needs to implement the same interface
 type Reg struct {
-	tp  interface{}
+	tp  P0Type
 	reg string
 }
 
-func NewReg(tp interface{}, reg string) Reg {
+func (reg *Reg) GetP0Type() P0Type {
+	return reg.tp
+}
+
+func (reg *Reg) GetName() string {
+	return ""
+}
+
+func (reg *Reg) SetName(string) {
+}
+
+func (reg *Reg) GetLevel() int {
+	return -2 // Using this b/c this is what level variables on stack are in the wasm code
+}
+
+func (reg *Reg) SetLevel(int) {
+
+}
+
+func (reg *Reg) GetSize() int {
+	return 0 // TODO: reconsider?
+}
+
+func NewReg(tp P0Type, reg string) Reg {
 	r := Reg{
 		tp:  tp,
 		reg: reg,
@@ -181,12 +205,37 @@ func NewReg(tp interface{}, reg string) Reg {
 	return r
 }
 
+// Cond is used like a symbol table Entry,, so it implements the same interface
 type Cond struct {
-	tp          interface{}
+	tp          P0Type
 	cond        string
 	left, right interface{}
 	labA        []string
 	labB        []string
+}
+
+func (cond *Cond) GetP0Type() P0Type {
+	return cond.tp
+}
+
+func (cond *Cond) GetName() string {
+	return ""
+}
+
+func (cond *Cond) SetName(string) {
+
+}
+
+func (cond *Cond) GetLevel() int {
+	return -69 // TODO: change to something sensible
+}
+
+func (cond *Cond) SetLevel(int) {
+
+}
+
+func (cond *Cond) GetSize() int {
+	return 0 // If this doesn't make sense, chagne ti to something that does make sense
 }
 
 func (condition *Cond) SetCondition(newCond string) {
@@ -229,11 +278,11 @@ func (cg *CGmips) loadItemReg(x interface{}, r string) {
 	_, xisConst := x.(*P0Const)
 	_, xisReg := x.(*Reg)
 	if xisVar {
-		cg.putMemOp("lw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()))
-		cg.releaseReg(x.(P0Var).GetRegister())
+		cg.putMemOp("lw", r, x.(*P0Var).GetRegister(), strconv.Itoa(x.(*P0Var).GetAddress()))
+		cg.releaseReg(x.(*P0Var).GetRegister())
 	} else if xisConst {
 		cg.testRange(x.(P0Const))
-		cg.putOp("addi", r, R0, strconv.Itoa(x.(P0Const).GetValue().(int)))
+		cg.putOp("addi", r, R0, strconv.Itoa(x.(*P0Const).GetValue().(int)))
 	} else if xisReg {
 		cg.putOp("add", r, x.(Reg).reg, R0)
 	} else {
@@ -242,23 +291,23 @@ func (cg *CGmips) loadItemReg(x interface{}, r string) {
 }
 
 //todo
-func (cg * CGmips) loadItem(x interface{}) Reg {
+func (cg *CGmips) loadItem(x interface{}) *Reg {
 	_, xisConst := x.(*P0Const)
 	r := ""
-	if xisConst && x.(P0Const).GetValue() == 0 {
+	if xisConst && x.(*P0Const).GetValue() == 0 {
 		r = R0
 	} else {
 		r = cg.obtainReg()
 		cg.loadItemReg(x, r)
 	}
-	return Reg{x.(P0Const).GetP0Type(), r}
+	return &Reg{x.(*P0Const).GetP0Type(), r}
 }
 
 //todo
-func (cg * CGmips) loadBool(x interface{}) Cond {
+func (cg *CGmips) loadBool(x interface{}) Cond {
 	_, xisConst := x.(*P0Const)
 	r := ""
-	if xisConst && x.(P0Const).GetValue() == 0 {
+	if xisConst && x.(*P0Const).GetValue() == 0 {
 		r = R0
 	} else {
 		r := cg.obtainReg()
@@ -267,7 +316,7 @@ func (cg * CGmips) loadBool(x interface{}) Cond {
 	return NewCond(NE, r, R0, "")
 }
 
-func (cg * CGmips) put(cd string, x interface{}, y interface{}) interface{} {
+func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	_, xisReg := x.(*Reg)
 	r := ""
 	if !xisReg {
@@ -311,7 +360,7 @@ func (cg * CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	return x
 }
 
-func (cg * CGmips) genVar(x Entry) interface{} {
+func (cg *CGmips) genVar(x Entry) interface{} {
 	var y interface{}
 
 	if (0 < x.GetLevel()) && (x.GetLevel() < cg.curlev) {
@@ -453,7 +502,7 @@ func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
 	} else if op == AND {
 		_, yisCond := y.(*Cond)
 		if !yisCond {
-			y = loadBool(y.(P0Type))
+			y = cg.loadBool(y.(P0Type))
 		}
 		for i := 0; i < len(x.labA); i++ {
 			y.(*Cond).SetLabA(append(y.(Cond).labA, x.labA[i])) // FIXME:
@@ -461,7 +510,7 @@ func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
 	} else if op == OR {
 		_, yisCond := y.(*Cond)
 		if !yisCond {
-			y = loadBool(y.(P0Type))
+			y = cg.loadBool(y.(P0Type))
 		}
 		for i := 0; i < len(x.labB); i++ {
 			y.(*Cond).SetLabB(append(y.(Cond).labB, x.labB[i])) // FIXME:
@@ -477,10 +526,10 @@ func (cg *CGmips) GenRelation(op int, x interface{}, y interface{}) Cond {
 	_, xisReg := x.(*Reg)
 	_, yisReg := y.(*Reg)
 	if !xisReg {
-		x = loadItem(x.(P0Type))
+		x = cg.loadItem(x.(P0Type))
 	}
 	if !yisReg {
-		y = loadItem(y.(P0Type))
+		y = cg.loadItem(y.(P0Type))
 	}
 	return NewCond(op, x.(Reg).reg, y.(Reg).reg, "")
 }
@@ -499,7 +548,7 @@ func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
 	} else {
 		_, yisReg := y.(*Reg)
 		if !yisReg {
-			y = loadItem(y.(P0Type))
+			y = cg.loadItem(y.(P0Type))
 		}
 		cg.putOp("sub", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetP0Type().(*P0Array).lower))
 		cg.putOp("mul", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetSize()))
@@ -538,7 +587,7 @@ func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 			cg.putOp("addi", r, R0, strconv.Itoa(0))
 			cg.putLab(lab_list, "")
 		} else if !yisReg {
-			y = loadItem(y.(P0Type))
+			y = cg.loadItem(y.(P0Type))
 			r = y.(Reg).reg
 		} else {
 			r = y.(Reg).reg
@@ -671,7 +720,7 @@ func (cg *CGmips) GenActualPara(ap, fp Entry, n int) {
 				cg.loadItemReg(ap, "$a"+strconv.Itoa(n))
 			} else {
 				if !apisReg {
-					ap = cg.LoadItem(ap)
+					ap = cg.loadItem(ap)
 				}
 				cg.putMemOp("sw", ap.(*P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
 				cg.releaseReg(ap.(*Reg).reg)
@@ -695,7 +744,7 @@ func (cg *CGmips) GenRead(x P0Var) {
 }
 
 func (cg *CGmips) GenWrite(x P0Type) {
-	loadItemReg(x, "$a0")
+	cg.loadItemReg(x, "$a0")
 	cg.putInstr("li $v0, 1", "")
 	cg.putInstr("syscall", "")
 }
@@ -713,7 +762,7 @@ func (cg *CGmips) GenSeq() {
 func (cg *CGmips) GenThen(x interface{}) interface{} {
 	_, xisCond := x.(*Cond)
 	if !xisCond {
-		x = loadBool(x.(P0Type))
+		x = cg.loadBool(x.(P0Type))
 	}
 	str1 := x.(Cond).cond
 	str2, _ := strconv.Atoi(str1)
