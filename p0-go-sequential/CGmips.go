@@ -101,7 +101,7 @@ func (cg * CGmips) genInt(i P0Int) P0Int {
 	return i
 }
 
-func genRec(r P0Record) P0Record {
+func (cg * CGmips) genRec(r P0Record) P0Record {
 	s := 0
 	fields := r.GetFields()
 	for f := 0; f < len(fields); f++ {
@@ -111,28 +111,28 @@ func genRec(r P0Record) P0Record {
 	return r
 }
 
-func genArray(a P0Array) P0Array {
+func (cg * CGmips) genArray(a P0Array) P0Array {
 	size := a.GetLength() + a.GetElementType().GetSize()
 	a.SetSize(size)
 	return a
 }
 
 //todo
-func genGlobalVars(sc []P0Var, start int) {
+func (cg * CGmips) genGlobalVars(sc []P0Var, start int) {
 	for i := len(sc) - 1; i > start-1; i-- {
 
 	}
-	putInstr(".text", "")
+	cg.putInstr(".text", "")
 }
 
-func genProgEntry() {
-	putInstr(".globl main", "")
-	putInstr(".ent main", "")
+func (cg * CGmips) genProgEntry() {
+	cg.putInstr(".globl main", "")
+	cg.putInstr(".ent main", "")
 	var lab []string
-	putLab(lab, "main")
+	cg.putLab(lab, "main")
 }
 
-func assembly(l string, i string, t string) string {
+func (cg * CGmips) assembly(l string, i string, t string) string {
 	string1 := ""
 	if l != "" {
 		string1 = l + ":\t"
@@ -149,23 +149,23 @@ func assembly(l string, i string, t string) string {
 	return string3
 }
 
-func genProgExit() string {
-	putInstr("li $v0, 10", "")
-	putInstr("syscall", "")
-	putInstr(".end main", "")
+func (cg * CGmips) genProgExit() string {
+	cg.putInstr("li $v0, 10", "")
+	cg.putInstr("syscall", "")
+	cg.putInstr(".end main", "")
 	returnStr := ""
-	for i := 0; i < len(asm); i++ {
-		asm_l := asm[i].a
-		asm_i := asm[i].b
-		asm_t := asm[i].c
-		returnStr = returnStr + assembly(asm_l.(string), asm_i.(string), asm_t.(string)) + "\n"
+	for i := 0; i < len(cg.asm); i++ {
+		asm_l := cg.asm[i].a
+		asm_i := cg.asm[i].b
+		asm_t := cg.asm[i].c
+		returnStr = returnStr + cg.assembly(asm_l.(string), asm_i.(string), asm_t.(string)) + "\n"
 	}
 	return (returnStr)
 }
 
-func newLabel() string {
-	label = label + 1
-	return ("L" + strconv.Itoa(label))
+func (cg * CGmips) newLabel() string {
+	cg.label = cg.label + 1
+	return ("L" + strconv.Itoa(cg.label))
 }
 
 type Reg struct {
@@ -217,25 +217,25 @@ func NewCond(tp interface{}, cond string, left interface{}, right interface{}) C
 	return (c)
 }
 
-func testRange(x P0Const) {
+func (cg * CGmips) testRange(x P0Const) {
 	if (x.GetValue().(int) >= 0x8000) || (x.GetValue().(int) < -0x8000) {
 		mark("value too large")
 	}
 }
 
 //todo
-func loadItemReg(x interface{}, r string) {
+func (cg * CGmips) loadItemReg(x interface{}, r string) {
 	_, xisVar := x.(*P0Var)
 	_, xisConst := x.(*P0Const)
 	_, xisReg := x.(*Reg)
 	if xisVar {
-		putMemOp("lw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()))
-		releaseReg(x.(P0Var).GetRegister())
+		cg.putMemOp("lw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()))
+		cg.releaseReg(x.(P0Var).GetRegister())
 	} else if xisConst {
-		testRange(x.(P0Const))
-		putOp("addi", r, R0, strconv.Itoa(x.(P0Const).GetValue().(int)))
+		cg.testRange(x.(P0Const))
+		cg.putOp("addi", r, R0, strconv.Itoa(x.(P0Const).GetValue().(int)))
 	} else if xisReg {
-		putOp("add", r, x.(Reg).reg, R0)
+		cg.putOp("add", r, x.(Reg).reg, R0)
 	} else {
 		panic("loadItemReg has problems")
 	}
