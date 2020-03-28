@@ -642,7 +642,7 @@ func (cg *CGmips) GenProcExit(parsize int, localsize int) {
 	cg.putInstr("jr $ra", "")
 }
 
-func (cg *CGmips) GenActualPara(ap interface{}, fp Entry, n int) {
+func (cg *CGmips) GenActualPara(ap, fp Entry, n int) {
 	_, fpisRef := fp.(*P0Ref)
 	r := ""
 	if fpisRef {
