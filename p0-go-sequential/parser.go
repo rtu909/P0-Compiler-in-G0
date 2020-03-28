@@ -88,8 +88,8 @@ func factor() Entry {
 	if sym == IDENT {
 		x = st.Find(val.(string))
 
-		_, xIsVar := x.GetP0Type().(*P0Var)
-		_, xIsRef := x.GetP0Type().(*P0Ref)
+		_, xIsVar := x.(*P0Var)
+		_, xIsRef := x.(*P0Ref)
 		xAsConst, xIsConst := x.(*P0Const)
 
 		if xIsVar || xIsRef {
