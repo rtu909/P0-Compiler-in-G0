@@ -774,7 +774,7 @@ func (cg *CGmips) GenSeq(Entry, Entry) {
 func (cg *CGmips) GenThen(x Entry) Entry {
 	_, xisCond := x.(*Cond)
 	if !xisCond {
-		val := cg.loadBool(x)
+		val := cg.loadBool(x).(Cond)
 		x = &val
 	}
 	str1 := x.(*Cond).cond

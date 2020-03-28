@@ -451,7 +451,7 @@ func statement() Entry {
 				label = cg.GenElse(x, y) // TODO: GenElse needs to return something
 			}
 			getSym()
-			z := statement() // Where is this used?
+			statement()
 			_, xIsBool = x.GetP0Type().(*P0Bool)
 			if xIsBool {
 				cg.GenIfElse(label)
