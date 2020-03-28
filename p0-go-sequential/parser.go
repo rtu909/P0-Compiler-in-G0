@@ -208,6 +208,7 @@ func statement() Entry {
 		case *P0StdProc:
 			// This man codes 8 lines of Go in one line of python
 			var fp []P0Type
+			var y Entry
 			xAsProc, xIsProc := x.(*P0Proc)
 			if xIsProc {
 				fp = xAsProc.GetParameters()
@@ -219,7 +220,7 @@ func statement() Entry {
 			if sym == LPAREN {
 				getSym()
 				if doesContain(FIRSTEXPRESSION[:], sym) {
-					y := expression()
+					y = expression()
 					if i < len(fp) {
 						if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
 							if xIsProc {
@@ -234,7 +235,7 @@ func statement() Entry {
 					i++
 					for sym == COMMA {
 						getSym()
-						y := expression()
+						y = expression()
 						if i < len(fp) {
 							if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
 								if xIsProc {
@@ -254,7 +255,9 @@ func statement() Entry {
 					mark("too few parameters")
 				} else if !xIsProc { // x is P0StdProc
 					if x.GetName() == "read" {
-						x = cg.GenRead(y) // TODO: continue from here
+						cg.GenRead(y) // TODO: continue from here
+					} else if x.GetName() == "write" {
+
 					}
 				}
 			}
