@@ -32,71 +32,71 @@ var A3 = "$a3"
 func (cg *CGmips) GenProgStart() {
 	cg.curlev, cg.label = 0, 0
 	cg.regs = GPRegs
-	putInstr(".data", "")
+	cg.putInstr(".data", "")
 }
 
-func obtainReg() string {
-	if len(regs) == 0 {
+func (cg * CGmips) obtainReg() string {
+	if len(cg.regs) == 0 {
 		mark("out of registers")
 		return R0
 	} else {
-		var popped = regs[9]
-		regs = regs[0 : len(regs)-1]
+		var popped = cg.regs[9]
+		cg.regs = cg.regs[0 : len(cg.regs)-1]
 		return popped
 	}
 }
 
-func releaseReg(r string) {
+func (cg * CGmips) releaseReg(r string) {
 	for i := 0; i < len(GPRegs); i++ {
 		if r == GPRegs[i] {
-			regs = append(regs, r)
+			cg.regs = append(cg.regs, r)
 		}
 	}
 }
 
-func putLab(lab []string, instr string) {
+func (cg * CGmips) putLab(lab []string, instr string) {
 
 	if len(lab) == 1 {
 		tuple := Triple{lab[0], instr, ""}
-		asm = append(asm, tuple)
+		cg.asm = append(cg.asm, tuple)
 	} else {
 		for i := 0; i < len(lab)-1; i++ {
 			tuple := Triple{lab[i], "", ""}
-			asm = append(asm, tuple)
+			cg.asm = append(cg.asm, tuple)
 		}
 		tuple := Triple{lab[len(lab)-1], instr, ""}
-		asm = append(asm, tuple)
+		cg.asm = append(cg.asm, tuple)
 	}
 }
 
-func putInstr(instr string, target string) {
+func (cg * CGmips) putInstr(instr string, target string) {
 	tuple := Triple{"", instr, target}
-	asm = append(asm, tuple)
+	cg.asm = append(cg.asm, tuple)
 }
 
-func putOp(op string, a string, b string, c string) {
-	putInstr(op+" "+a+", "+b+", "+c, "")
+func (cg * CGmips) putOp(op string, a string, b string, c string) {
+	cg.putInstr(op+" "+a+", "+b+", "+c, "")
 }
 
-func putBranchOp(op string, a string, b string, c string) {
-	putInstr(op+" "+a+", "+b, c)
+func (cg * CGmips) putBranchOp(op string, a string, b string, c string) {
+	cg.putInstr(op+" "+a+", "+b, c)
 }
 
-func putMemOp(op string, a string, b string, c string) {
+func (cg * CGmips) putMemOp(op string, a string, b string, c string) {
 	if b == R0 {
-		putInstr(op+" "+a+", "+c, "")
+		cg.putInstr(op+" "+a+", "+c, "")
 	} else {
-		putInstr(op+" "+a+", "+c+"("+b+")", "")
+		cg.putInstr(op+" "+a+", "+c+"("+b+")", "")
 	}
 }
 
 //size - not sure what's going on here in the regular code
-func genBool(b P0Bool) P0Bool {
+func (cg * CGmips) genBool(b P0Bool) P0Bool {
 	b.SetSize(4)
 	return b
 }
 
-func genInt(i P0Int) P0Int {
+func (cg * CGmips) genInt(i P0Int) P0Int {
 	i.SetSize(4)
 	return i
 }
