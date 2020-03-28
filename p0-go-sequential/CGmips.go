@@ -101,7 +101,7 @@ func (cg *CGmips) genInt(i P0Int) P0Int {
 	return i
 }
 
-func (cg * CGmips) genRec(r P0Record) P0Record {
+func (cg *CGmips) genRec(r P0Record) P0Record {
 	s := 0
 	fields := r.GetFields()
 	for f := 0; f < len(fields); f++ {
@@ -111,28 +111,28 @@ func (cg * CGmips) genRec(r P0Record) P0Record {
 	return r
 }
 
-func (cg * CGmips) genArray(a P0Array) P0Array {
+func (cg *CGmips) genArray(a P0Array) P0Array {
 	size := a.GetLength() + a.GetElementType().GetSize()
 	a.SetSize(size)
 	return a
 }
 
 //todo
-func (cg * CGmips) genGlobalVars(sc []P0Var, start int) {
+func (cg *CGmips) genGlobalVars(sc []P0Var, start int) {
 	for i := len(sc) - 1; i > start-1; i-- {
 
 	}
 	cg.putInstr(".text", "")
 }
 
-func (cg * CGmips) genProgEntry() {
+func (cg *CGmips) genProgEntry() {
 	cg.putInstr(".globl main", "")
 	cg.putInstr(".ent main", "")
 	var lab []string
 	cg.putLab(lab, "main")
 }
 
-func (cg * CGmips) assembly(l string, i string, t string) string {
+func (cg *CGmips) assembly(l string, i string, t string) string {
 	string1 := ""
 	if l != "" {
 		string1 = l + ":\t"
@@ -149,7 +149,7 @@ func (cg * CGmips) assembly(l string, i string, t string) string {
 	return string3
 }
 
-func (cg * CGmips) genProgExit() string {
+func (cg *CGmips) genProgExit() string {
 	cg.putInstr("li $v0, 10", "")
 	cg.putInstr("syscall", "")
 	cg.putInstr(".end main", "")
@@ -163,7 +163,7 @@ func (cg * CGmips) genProgExit() string {
 	return (returnStr)
 }
 
-func (cg * CGmips) newLabel() string {
+func (cg *CGmips) newLabel() string {
 	cg.label = cg.label + 1
 	return ("L" + strconv.Itoa(cg.label))
 }
@@ -217,14 +217,14 @@ func NewCond(tp interface{}, cond string, left interface{}, right interface{}) C
 	return (c)
 }
 
-func (cg * CGmips) testRange(x P0Const) {
+func (cg *CGmips) testRange(x P0Const) {
 	if (x.GetValue().(int) >= 0x8000) || (x.GetValue().(int) < -0x8000) {
 		mark("value too large")
 	}
 }
 
 //todo
-func (cg * CGmips) loadItemReg(x interface{}, r string) {
+func (cg *CGmips) loadItemReg(x interface{}, r string) {
 	_, xisVar := x.(*P0Var)
 	_, xisConst := x.(*P0Const)
 	_, xisReg := x.(*Reg)
@@ -340,10 +340,10 @@ func genVar(x Entry) interface{} {
 			y.SetRegister(x.(*P0Ref).GetRegister())
 			y.SetAddress(0)
 		} else {
-			y.SetRegister(obtainReg())
+			y.SetRegister(cg.obtainReg())
 			y.SetAddress(0)
 
-			putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
+			cg.putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
 		}
 	} else if xisVar {
 		var regList []string
@@ -531,7 +531,7 @@ func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 			cg.putLab(y.(Cond).labB, "")
 			cg.putOp("addi", r, R0, strconv.Itoa(1))
 			var lab_list []string
-			lab := newLabel()
+			lab := cg.newLabel()
 			lab_list = append(lab_list, lab)
 			cg.putInstr("b", lab)
 			cg.putLab(y.(Cond).labA, "")
@@ -557,14 +557,14 @@ func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 			cg.putLab(y.(Cond).labB, "")
 			cg.putOp("addi", x.(Reg).reg, R0, strconv.Itoa(1))
 			var lab_list []string
-			lab := newLabel()
+			lab := cg.newLabel()
 			lab_list = append(lab_list, lab)
 			cg.putInstr("b", lab)
 			cg.putLab(y.(Cond).labA, "")
 			cg.putOp("addi", x.(Reg).reg, R0, strconv.Itoa(0))
 			cg.putLab(lab_list, "")
 		} else if !yisReg {
-			loadItemReg(y.(P0Type), x.(Reg).reg)
+			cg.loadItemReg(y.(P0Type), x.(Reg).reg)
 		} else {
 			cg.putOp("addi", x.(Reg).reg, y.(Reg).reg, strconv.Itoa(0))
 		}
@@ -668,13 +668,13 @@ func (cg *CGmips) GenActualPara(ap, fp Entry, n int) {
 		_, apisReg := ap.(*Reg)
 		if !apisCond {
 			if n < 4 {
-				loadItemReg(ap, "$a"+strconv.Itoa(n))
+				cg.loadItemReg(ap, "$a"+strconv.Itoa(n))
 			} else {
 				if !apisReg {
-					ap = loadItem(ap)
+					ap = cg.LoadItem(ap)
 				}
 				cg.putMemOp("sw", ap.(*P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
-				cg.releaseReg(ap.(Reg).reg)
+				cg.releaseReg(ap.(*Reg).reg)
 			}
 		} else {
 			mark("unsupported parameter type")
@@ -729,7 +729,7 @@ func (cg *CGmips) GenIfThen(x Cond) {
 }
 
 func (cg *CGmips) GenElse(x Cond) string {
-	lab := newLabel()
+	lab := cg.newLabel()
 	cg.putInstr("b", lab)
 	cg.putLab(x.labA, "")
 	return lab
@@ -740,7 +740,7 @@ func (cg *CGmips) GenIfElse(y []string) {
 }
 
 func (cg *CGmips) GenWhile() {
-	lab := newLabel()
+	lab := cg.newLabel()
 	var lab1 []string
 	lab1 = append(lab1, lab)
 	cg.putLab(lab1, "")
