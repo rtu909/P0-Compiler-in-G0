@@ -286,22 +286,16 @@ func expression() Entry {
 				switch op {
 				case EQ:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) == yAsConst.GetValue().(int)))
-					break
 				case NE:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) != yAsConst.GetValue().(int)))
-					break
 				case LT:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) < yAsConst.GetValue().(int)))
-					break
 				case LE:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) <= yAsConst.GetValue().(int)))
-					break
 				case GT:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) > yAsConst.GetValue().(int)))
-					break
 				case GE:
 					xAsConst.SetValue(bool2int(xAsConst.GetValue().(int) >= yAsConst.GetValue().(int)))
-					break
 				}
 				xAsConst.p0type = cg.GenBool(&P0Bool{})
 				x = xAsConst
@@ -337,13 +331,13 @@ func statement() Entry {
 			getSym()
 		}
 	}
+	print(sym)
 	if sym == IDENT {
 		print(val.(string))
 		x = st.Find(val.(string))
 		getSym()
 		switch x.(type) {
-		case *P0Var:
-		case *P0Int:
+		case *P0Var, *P0Int:
 			x = cg.GenVar(x)
 			x = selector(x)
 			if sym == BECOMES {
@@ -366,9 +360,7 @@ func statement() Entry {
 			} else {
 				mark(":= expected")
 			}
-			break
-		case *P0Proc:
-		case *P0StdProc:
+		case *P0Proc, *P0StdProc:
 			// This man codes 8 lines of Go in one line of python
 			var fp []P0Type
 			var y Entry
@@ -427,10 +419,8 @@ func statement() Entry {
 			} else {
 				cg.GenCall(x)
 			}
-			break
 		default:
 			mark("variable or procedure expected")
-			break
 		}
 	} else if sym == BEGIN {
 		x = compoundStatement()

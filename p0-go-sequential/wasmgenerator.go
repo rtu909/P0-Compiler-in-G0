@@ -51,16 +51,12 @@ func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) int {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
 			switch asVar.GetP0Type().(type) {
-			case *P0Bool:
-			case *P0Int:
+			case *P0Bool, *P0Int:
 				(*wg).asm = append((*wg).asm, "(global $"+entry.GetName()+" (mut i32) i32.const 0)")
-				break
-			case *P0Array:
-			case *P0Record:
+			case *P0Array, *P0Record:
 				asVar.SetLevel(-2)
 				asVar.SetAddress(wg.memorySize)
 				wg.memorySize += entry.GetP0Type().GetSize()
-				break
 			default:
 				mark("WASM type?")
 			}
@@ -74,14 +70,10 @@ func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) int {
 		asVar, isVar := entry.(*P0Var)
 		if isVar {
 			switch asVar.GetP0Type().(type) {
-			case *P0Int:
-			case *P0Bool:
+			case *P0Int, *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+entry.GetName()+" i32)")
-				break
-			case *P0Array:
-			case *P0Record:
+			case *P0Array, *P0Record:
 				mark("WASM: no local arrays, records")
-				break
 			default:
 				mark("WASM type?")
 			}
@@ -154,21 +146,17 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 		wg.asm = append(wg.asm, "i32.const -1")
 		wg.asm = append(wg.asm, "i32.mul")
 		entry = &P0Var{&P0Int{}, "", -1, "", 0, 0}
-		break
 	case NOT:
 		wg.asm = append(wg.asm, "i32.eqz")
 		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
-		break
 	case AND:
 		wg.asm = append(wg.asm, "if (result i32)")
 		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
-		break
 	case OR:
 		wg.asm = append(wg.asm, "if (result i32)")
 		wg.asm = append(wg.asm, "i32.const 1")
 		wg.asm = append(wg.asm, "else")
 		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
-		break
 	default:
 		mark("WASM: unary operator?")
 	}
@@ -177,45 +165,33 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 
 func (wg *WasmGenerator) GenBinaryOp(op int, x, y Entry) Entry {
 	switch op {
-	case PLUS:
-	case MINUS:
-	case TIMES:
-	case DIV:
-	case MOD:
+	case PLUS, MINUS, TIMES, DIV, MOD:
 		wg.LoadItem(x)
 		wg.LoadItem(y)
 		switch op {
 		case PLUS:
 			wg.asm = append(wg.asm, "i32.add")
-			break
 		case MINUS:
 			wg.asm = append(wg.asm, "i32.sub")
-			break
 		case TIMES:
 			wg.asm = append(wg.asm, "i32.mul")
-			break
 		case DIV:
 			wg.asm = append(wg.asm, "i32.div_s")
-			break
 		case MOD:
 			wg.asm = append(wg.asm, "i32.rem_s")
-			break
 		}
 		x = &P0Var{&P0Int{}, "", -1, "", 0, 0}
-		break
 	case AND:
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "else")
 		wg.asm = append(wg.asm, "i32.const 0")
 		wg.asm = append(wg.asm, "end")
 		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
-		break
 	case OR:
 		// x should already be on the stack b/c magic
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "end")
 		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
-		break
 	default:
 		panic("Unrecognized binary operator")
 	}
@@ -228,22 +204,16 @@ func (wg *WasmGenerator) GenRelation(op int, x Entry, y Entry) Entry {
 	switch op {
 	case EQ:
 		wg.asm = append(wg.asm, "i32.eq")
-		break
 	case NE:
 		wg.asm = append(wg.asm, "i32.ne")
-		break
 	case LT:
 		wg.asm = append(wg.asm, "i32.lt_s")
-		break
 	case GT:
 		wg.asm = append(wg.asm, "i32.gt_s")
-		break
 	case LE:
 		wg.asm = append(wg.asm, "i32.le_s")
-		break
 	case GE:
 		wg.asm = append(wg.asm, "i32.ge_s")
-		break
 	default:
 		panic("Unrecognized relational operator")
 	}
@@ -373,18 +343,14 @@ func (wg *WasmGenerator) GenProcStart(ident string, fp []Entry) int {
 		_, isVar := entry.(*P0Var)
 		_, isRef := entry.(*P0Ref)
 		switch entry.GetP0Type().(type) {
-		case *P0Int:
-		case *P0Bool:
+		case *P0Int, *P0Bool:
 			if isRef {
 				mark("WASM: Only array and record reference parameters")
 			}
-			break
-		case *P0Array:
-		case *P0Record:
+		case *P0Array, *P0Record:
 			if isVar {
 				mark("WASM: no structured valued parameters")
 			}
-			break
 		}
 		funcDecl += "(param $" + entry.GetName() + " i32) "
 	}
@@ -411,11 +377,8 @@ func (wg *WasmGenerator) GenActualPara(ap, fp Entry, parameterNumber int) {
 		}
 	} else {
 		switch ap.(type) {
-		case *P0Var:
-		case *P0Ref:
-		case *P0Const:
+		case *P0Var, *P0Ref, *P0Const:
 			wg.LoadItem(ap)
-			break
 		default:
 			mark("Unsupported parameter type")
 		}
