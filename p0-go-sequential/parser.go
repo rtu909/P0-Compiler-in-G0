@@ -166,8 +166,77 @@ func compoundStatement() Entry {
 	return x
 }
 
+// statement does a few things. It's a pretty cool function, you should take a look at the source code.
 func statement() Entry {
-	// TODO:
+	var x Entry
+	if !doesContain(FIRSTSTATEMENT[:], sym) {
+		mark("statement expected")
+		for !doesContain(FIRSTSTATEMENT[:], sym) && !doesContain(FOLLOWSTATEMENT[:], sym) && !doesContain(STRONGSYMS[:], sym) {
+			getSym()
+		}
+	}
+	if sym == IDENT {
+		x = st.Find(val.(string))
+		getSym()
+		switch x.(type) {
+		case *P0Var:
+		case *P0Int:
+			x = cg.GenVar(x)
+			x = selector(x)
+			if sym == BECOMES {
+				getSym()
+				y := expression()
+				_, xIsBool := x.(*P0Bool)
+				_, yIsBool := y.(*P0Bool)
+				_, xIsInt := x.(*P0Int)
+				_, yIsInt := y.(*P0Int)
+				if (xIsBool && yIsBool) || (xIsInt && yIsInt) {
+					cg.GenAssign(x, y)
+					x = nil // FIXME: ?
+				} else {
+					mark("incompatible assignment")
+				}
+			} else if sym == EQ {
+				mark(":= expected")
+				getSym()
+				_ = expression() // We parse to consume the input, but we can't use the result because the code in incorrect
+			} else {
+				mark(":= expected")
+			}
+			break
+		case *P0Proc:
+		case *P0StdProc:
+			// This man codes 8 lines of Go in one line of python
+			var fp []P0Type
+			xAsProc, xIsProc := x.(*P0Proc)
+			if xIsProc {
+				fp = xAsProc.GetParameters()
+			} else {
+				fp = x.(*P0StdProc).GetParameters()
+			}
+			ap := make([]Entry, 0)
+			i := 0
+			if sym == LPAREN {
+				getSym()
+				if doesContain(FIRSTEXPRESSION[:], sym) {
+					y := expression()
+					if i < len(fp) {
+						_, fpIsBool := fp[i].(*P0Bool)
+						_, fpIsInt := fp[i].(*P0Int)
+						_, yIsBool := y.GetP0Type().(*P0Bool)
+						_, yIsInt := y.GetP0Type().(*P0Int)
+						if (fpIsBool && yIsBool) || (fpIsInt && yIsInt) {
+							// TODO:
+						}
+					}
+				}
+			}
+			break
+		default:
+			mark("variable or procedure expected")
+			break
+		}
+	}
 	return nil
 }
 
