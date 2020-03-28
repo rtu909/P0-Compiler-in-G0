@@ -111,8 +111,8 @@ func factor() Entry {
 	} else if sym == NUMBER {
 		x = &P0Const{
 			nil, // TODO: Check if nil is supposed to go here
-			x.GetName(),
-			x.GetLevel(),
+			"",
+			0,
 			val,
 		}
 		x = cg.GenConst(x)
@@ -331,9 +331,7 @@ func statement() Entry {
 			getSym()
 		}
 	}
-	print(sym)
 	if sym == IDENT {
-		print(val.(string))
 		x = st.Find(val.(string))
 		getSym()
 		switch x.(type) {
