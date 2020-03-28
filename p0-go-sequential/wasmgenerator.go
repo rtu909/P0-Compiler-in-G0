@@ -455,16 +455,18 @@ func (wg *WasmGenerator) GenIfThen(x Entry) {
 	wg.asm = append(wg.asm, "end")
 }
 
-func (wg *WasmGenerator) GenElse(x, y Entry) {
+func (wg *WasmGenerator) GenElse(x, y Entry) string {
 	wg.asm = append(wg.asm, "else")
+	return "" // Labels not used in WASM
 }
 
-func (wg *WasmGenerator) GenIfElse(x, y, z Entry) {
+func (wg *WasmGenerator) GenIfElse(string) {
 	wg.asm = append(wg.asm, "end")
 }
 
-func (wg *WasmGenerator) GenWhile() {
+func (wg *WasmGenerator) GenWhile() string {
 	wg.asm = append(wg.asm, "loop")
+	return "" // Labels unused in WASM
 }
 
 func (wg *WasmGenerator) GenDo(x Entry) Entry {
@@ -473,7 +475,7 @@ func (wg *WasmGenerator) GenDo(x Entry) Entry {
 	return x
 }
 
-func (wg *WasmGenerator) GenWhileDo(t, x, y Entry) {
+func (wg *WasmGenerator) GenWhileDo(t string, x, y Entry) {
 	wg.asm = append(wg.asm, "br 1")
 	wg.asm = append(wg.asm, "end")
 	wg.asm = append(wg.asm, "end")

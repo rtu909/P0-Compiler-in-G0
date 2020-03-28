@@ -128,7 +128,7 @@ func factor() Entry {
 	} else if sym == NOT {
 		getSym()
 		x = factor()
-		xAsBool, xIsBool := x.GetP0Type().(*P0Bool)
+		_, xIsBool := x.GetP0Type().(*P0Bool)
 		xAsConst2, xIsConst2 := x.(*P0Const)
 		if !xIsBool {
 			mark("not boolean")
@@ -377,7 +377,6 @@ func statement() Entry {
 			} else {
 				fp = x.(*P0StdProc).GetParameters()
 			}
-			ap := make([]Entry, 0)
 			i := 0
 			if sym == LPAREN {
 				getSym()
@@ -419,17 +418,69 @@ func statement() Entry {
 					if x.GetName() == "read" {
 						cg.GenRead(y) // TODO: continue from here
 					} else if x.GetName() == "write" {
-
+						cg.GenWrite(y)
+					} else if x.GetName() == "writeln" {
+						cg.GenWriteln()
 					}
 				}
+			} else {
+				cg.GenCall(x)
 			}
 			break
 		default:
 			mark("variable or procedure expected")
 			break
 		}
+	} else if sym == BEGIN {
+		x = compoundStatement()
+	} else if sym == IF {
+		getSym()
+		x = expression()
+		_, xIsBool := x.GetP0Type().(*P0Bool)
+		if xIsBool {
+			x = cg.GenThen(x)
+		} else {
+			mark("boolean expected")
+		}
+		getElseMark(sym == THEN, "'then' expected")
+		y := statement()
+		if sym == ELSE {
+			_, xIsBool = x.GetP0Type().(*P0Bool)
+			var label string
+			if xIsBool {
+				label = cg.GenElse(x, y) // TODO: GenElse needs to return something
+			}
+			getSym()
+			z := statement()
+			_, xIsBool = x.GetP0Type().(*P0Bool)
+			if xIsBool {
+				x = cg.GenIfElse(label)
+			}
+		} else {
+			_, xIsBool = x.GetP0Type().(*P0Bool)
+			x = cg.GenIfThen(x) // TODO: GenIfThen needs to return something
+		}
+	} else if sym == WHILE {
+		getSym()
+		t := cg.GenWhile()
+		x = expression()
+		_, xIsBool := x.GetP0Type().(*P0Bool)
+		if xIsBool {
+			x = cg.GenDo(x)
+		} else {
+			mark("boolean expected")
+		}
+		getElseMark(sym == DO, "'do' expected")
+		y := statement()
+		_, xIsBool = x.GetP0Type().(*P0Bool)
+		if xIsBool {
+			cg.GenWhileDo(t, x, y)
+			x = nil
+		}
+	} else {
+		x = nil
 	}
-	return nil
+	return x
 }
 
 func typ() P0Type {
@@ -597,8 +648,10 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 			}
 			// The function parameters are stored in the top scope. Make a copy for the symbol table declaration
 			fp = st.TopScope()
-			tmp := make([]Entry, len(fp))
-			copy(tmp, fp)
+			tmp := make([]P0Type, len(fp))
+			for i, item := range fp {
+				tmp[i] = item.(P0Type)
+			}
 			st.Find(ident).(*P0Proc).parameters = tmp
 			getElseMark(sym == RPAREN, ") expected")
 		} else {
