@@ -91,41 +91,51 @@ func (cg *CGmips) putMemOp(op string, a string, b string, c string) {
 }
 
 //size - not sure what's going on here in the regular code
-func (cg *CGmips) genBool(b P0Bool) P0Bool {
+func (cg *CGmips) GenBool(b P0Type) P0Type {
 	b.SetSize(4)
 	return b
 }
 
-func (cg *CGmips) genInt(i P0Int) P0Int {
+func (cg *CGmips) GenInt(i P0Type) P0Type {
 	i.SetSize(4)
 	return i
 }
 
-func (cg *CGmips) genRec(r P0Record) P0Record {
+//todo
+func (cg *CGmips) GenRecord(r P0Type) P0Type {
 	s := 0
-	fields := r.GetFields()
+	fields := r.(*P0Record).GetFields()
 	for f := 0; f < len(fields); f++ {
-
+		fields[f].(*P0Var).offset = s
+		s = s + fields[f].GetP0Type().GetSize()
 	}
 	r.SetSize(s)
 	return r
 }
 
-func (cg *CGmips) genArray(a P0Array) P0Array {
-	size := a.GetLength() + a.GetElementType().GetSize()
+func (cg *CGmips) GenArray(a P0Type) P0Type {
+	size := a.(*P0Array).GetLength() + a.(*P0Array).GetElementType().GetSize()
 	a.SetSize(size)
 	return a
 }
 
 //todo
-func (cg *CGmips) genGlobalVars(sc []P0Var, start int) {
-	for i := len(sc) - 1; i > start-1; i-- {
+func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) {
+	for i := len(declaredVars) - 1; i > start-1; i-- {
+		_, scisVar := declaredVars[i].(*P0Var)
+		if scisVar{
+			declaredVars[i].(*P0Var).SetRegister(R0)
+			declaredVars[i].(*P0Var).SetAddress(declaredVars[i].GetSize())
+			var labs []string
+			labs = append(labs, strconv.Itoa(declaredVars[i].(*P0Var).GetAddress()))
 
+			cg.putLab(labs, ".space" + strconv.Itoa(declaredVars[i].GetSize()) )
+		}
 	}
 	cg.putInstr(".text", "")
 }
 
-func (cg *CGmips) genProgEntry() {
+func (cg *CGmips) GenProgEntry() {
 	cg.putInstr(".globl main", "")
 	cg.putInstr(".ent main", "")
 	var lab []string
@@ -149,7 +159,7 @@ func (cg *CGmips) assembly(l string, i string, t string) string {
 	return string3
 }
 
-func (cg *CGmips) genProgExit() string {
+func (cg *CGmips) GenProgExit() string {
 	cg.putInstr("li $v0, 10", "")
 	cg.putInstr("syscall", "")
 	cg.putInstr(".end main", "")
@@ -250,13 +260,13 @@ func (condition *Cond) SetLabB(newCond []string) {
 	(*condition).labB = newCond
 }
 
-func NewCond(tp interface{}, cond string, left interface{}, right interface{}) Cond {
+func (cg *CGmips) NewCond(tp interface{}, cond string, left interface{}, right interface{}) Cond {
 	var labA []string
 	var labB []string
-	labA = append(labA, newLabel())
-	labB = append(labB, newLabel())
+	labA = append(labA, cg.newLabel())
+	labB = append(labB, cg.newLabel())
 	c := Cond{
-		tp:    tp,
+		tp:    tp.(P0Type),
 		cond:  cond,
 		left:  left,
 		right: right,
@@ -313,7 +323,7 @@ func (cg *CGmips) loadBool(x interface{}) Cond {
 		r := cg.obtainReg()
 		cg.loadItemReg(x, r)
 	}
-	return NewCond(NE, r, R0, "")
+	return cg.NewCond(NE, r, R0, "")
 }
 
 func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
@@ -360,7 +370,7 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	return x
 }
 
-func (cg *CGmips) genVar(x Entry) interface{} {
+func (cg *CGmips) GenVar(x Entry) Entry {
 	var y interface{}
 
 	if (0 < x.GetLevel()) && (x.GetLevel() < cg.curlev) {
@@ -424,10 +434,10 @@ func (cg *CGmips) genVar(x Entry) interface{} {
 		panic("nothing is working")
 	}
 
-	return y
+	return y.(Entry)
 }
 
-func (cg *CGmips) GenConst(x P0Const) P0Const {
+func (cg *CGmips) GenConst(x Entry) Entry {
 	return x
 }
 
@@ -445,19 +455,19 @@ func condOp(cd int) string {
 	return dict[cd]
 }
 
-func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
-	_, xisVar := x.(*P0Var)
-	_, xisCond := x.(*Cond)
+func (cg *CGmips) GenUnaryOp(op int, entry Entry) Entry {
+	_, xisVar := entry.(*P0Var)
+	_, xisCond := entry.(*Cond)
 	if op == MINUS {
 		if xisVar {
-			x = cg.loadItem(x.(P0Type))
+			entry = cg.loadItem(entry.(P0Type))
 		}
-		cg.putOp("sub", x.(*P0Var).GetRegister(), R0, x.(*P0Var).GetRegister())
+		cg.putOp("sub", entry.(*P0Var).GetRegister(), R0, x.(*P0Var).GetRegister())
 	} else if op == NOT {
 		if !xisCond {
-			x = cg.loadBool(x.(P0Type))
+			entry = cg.loadBool(entry.(P0Type))
 		}
-		str1 := x.(Cond).cond
+		str1 := entry.(Cond).cond
 		str2, _ := strconv.Atoi(str1)
 		x.(*Cond).SetCondition(strconv.Itoa(negate(str2)))
 		x.(*Cond).SetLabA(x.(Cond).labB)
