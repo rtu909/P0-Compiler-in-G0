@@ -110,7 +110,7 @@ func factor() Entry {
 		x = selector(x)
 	} else if sym == NUMBER {
 		x = &P0Const{
-			nil, // TODO: Check if nil is supposed to go here
+			cg.GenInt(&P0Int{}),
 			"",
 			0,
 			val,
@@ -211,7 +211,6 @@ func simpleExpression() Entry {
 		}
 	} else {
 		x = term()
-
 	}
 
 	for sym == PLUS || sym == MINUS || sym == OR {
@@ -341,10 +340,10 @@ func statement() Entry {
 			if sym == BECOMES {
 				getSym()
 				y := expression()
-				_, xIsBool := x.(*P0Bool)
-				_, yIsBool := y.(*P0Bool)
-				_, xIsInt := x.(*P0Int)
-				_, yIsInt := y.(*P0Int)
+				_, xIsBool := x.GetP0Type().(*P0Bool)
+				_, yIsBool := y.GetP0Type().(*P0Bool)
+				_, xIsInt := x.GetP0Type().(*P0Int)
+				_, yIsInt := y.GetP0Type().(*P0Int)
 				if (xIsBool && yIsBool) || (xIsInt && yIsInt) {
 					cg.GenAssign(x, y)
 					x = nil // FIXME: ?
