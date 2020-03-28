@@ -651,8 +651,8 @@ func (cg *CGmips) GenProcStart(unused string, fp []Entry) int {
 	cg.curlev = cg.curlev + 1
 	n := len(fp)
 	for i := 0; i < n; i++ {
-		_, fpisInt := fp[i].(*P0Int)
-		_, fpisBool := fp[i].(*P0Bool)
+		_, fpisInt := fp[i].GetP0Type().(*P0Int)
+		_, fpisBool := fp[i].GetP0Type().(*P0Bool)
 		_, fpisRef := fp[i].(*P0Ref)
 		if fpisInt || fpisBool || fpisRef {
 			if fpisInt || fpisBool {
