@@ -378,7 +378,7 @@ func genVar(x Entry) interface{} {
 	return y
 }
 
-func genConst(x P0Const) P0Const {
+func (cg *CGmips) GenConst(x P0Const) P0Const {
 	return x
 }
 
@@ -396,7 +396,7 @@ func condOp(cd int) string {
 	return dict[cd]
 }
 
-func genUnaryOp(op int, x interface{}) interface{} {
+func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
 	_, xisVar := x.(*P0Var)
 	_, xisCond := x.(*Cond)
 	if op == MINUS {
@@ -439,7 +439,7 @@ func genUnaryOp(op int, x interface{}) interface{} {
 	return x
 }
 
-func genBinaryOp(op int, x Cond, y interface{}) interface{} {
+func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
 	if op == PLUS {
 		y = put("add", x, y)
 	} else if op == MINUS {
@@ -456,7 +456,7 @@ func genBinaryOp(op int, x Cond, y interface{}) interface{} {
 			y = loadBool(y.(P0Type))
 		}
 		for i := 0; i < len(x.labA); i++ {
-			y.(Cond).SetLabA(append(y.(Cond).labA, x.labA[i]))
+			y.(Cond).SetLabA(append(y.(Cond).labA, x.labA[i])) // FIXME:
 		}
 	} else if op == OR {
 		_, yisCond := y.(*Cond)
@@ -464,7 +464,7 @@ func genBinaryOp(op int, x Cond, y interface{}) interface{} {
 			y = loadBool(y.(P0Type))
 		}
 		for i := 0; i < len(x.labB); i++ {
-			y.(Cond).SetLabB(append(y.(Cond).labB, x.labB[i]))
+			y.(Cond).SetLabB(append(y.(Cond).labB, x.labB[i])) // FIXME:
 		}
 	} else {
 		panic("genBinaryOp failed")
@@ -473,7 +473,7 @@ func genBinaryOp(op int, x Cond, y interface{}) interface{} {
 	return y
 }
 
-func genRelation(op int, x interface{}, y interface{}) Cond {
+func (cg *CGmips) GenRelation(op int, x interface{}, y interface{}) Cond {
 	_, xisReg := x.(*Reg)
 	_, yisReg := y.(*Reg)
 	if !xisReg {
@@ -485,16 +485,16 @@ func genRelation(op int, x interface{}, y interface{}) Cond {
 	return NewCond(op, x.(Reg).reg, y.(Reg).reg, "")
 }
 
-func genSelect(x P0Ref, f P0Var) P0Ref {
+func (cg *CGmips) GenSelect(x P0Ref, f P0Var) P0Ref {
 	x.p0type = f.p0type
 	x.adr = x.adr + f.offset
 	return x
 }
 
-func genIndex(x Entry, y interface{}) interface{} {
+func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
 	_, yisConst := y.(*P0Const)
 	if yisConst {
-		offset := (y.(P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(*P0Array).lower) * x.(*P0Var).GetSize()
+		offset := (y.(*P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(*P0Array).lower) * x.(*P0Var).GetSize()
 		x.(*P0Var).SetAddress(x.(*P0Var).GetAddress() + offset)
 	} else {
 		_, yisReg := y.(*Reg)
@@ -514,7 +514,7 @@ func genIndex(x Entry, y interface{}) interface{} {
 	return x
 }
 
-func genAssign(x interface{}, y interface{}) {
+func (cg *CGmips) GenAssign(x interface{}, y interface{}) {
 	_, xisVar := x.(*P0Var)
 	_, xisReg := x.(*Reg)
 	r := ""
@@ -543,7 +543,7 @@ func genAssign(x interface{}, y interface{}) {
 		} else {
 			r = y.(Reg).reg
 		}
-		putMemOp("sw", r, x.(P0Var).GetRegister(), strconv.Itoa(x.(P0Var).GetAddress()))
+		putMemOp("sw", r, x.(*P0Var).GetRegister(), strconv.Itoa(x.(*P0Var).GetAddress()))
 		releaseReg(r)
 	} else if xisReg {
 		_, yisVar := y.(*Cond)
@@ -573,7 +573,7 @@ func genAssign(x interface{}, y interface{}) {
 	}
 }
 
-func genLocalVars(sc []Entry, start int) int {
+func (cg *CGmips) GenLocalVars(sc []Entry, start int) int {
 	s := 0
 	for i := start; i < len(sc); i++ {
 		_, scIsVar := sc[i].(*P0Var)
@@ -586,8 +586,8 @@ func genLocalVars(sc []Entry, start int) int {
 	return s
 }
 
-func genProcStart(fp []Entry) int {
-	curlev = curlev + 1
+func (cg *CGmips) GenProcStart(fp []Entry) int {
+	cg.curlev = cg.curlev + 1
 	n := len(fp)
 	for i := 0; i < n; i++ {
 		_, fpisInt := fp[i].(*P0Int)
@@ -622,7 +622,7 @@ func genProcStart(fp []Entry) int {
 	}
 }
 
-func genProcEntry(ident string, parsize int, localsize int) {
+func (cg *CGmips) GenProcEntry(ident string, parsize int, localsize int) {
 	putInstr(".globl"+ident, "")
 	putInstr(".ent"+ident, "")
 	var lab_list []string
@@ -634,31 +634,31 @@ func genProcEntry(ident string, parsize int, localsize int) {
 	putOp("sub", SP, FP, strconv.Itoa(localsize+8))
 }
 
-func genProcExit(parsize int, localsize int) {
-	curlev = curlev - 1
+func (cg *CGmips) GenProcExit(parsize int, localsize int) {
+	cg.curlev = cg.curlev - 1
 	putOp("add", SP, FP, strconv.Itoa(parsize))
 	putMemOp("lw", LNK, FP, strconv.Itoa(-8))
 	putMemOp("lw", FP, FP, strconv.Itoa(-4))
 	putInstr("jr $ra", "")
 }
 
-func genActualPara(ap interface{}, fp Entry, n int) {
+func (cg *CGmips) GenActualPara(ap interface{}, fp Entry, n int) {
 	_, fpisRef := fp.(*P0Ref)
 	r := ""
 	if fpisRef {
-		if ap.(P0Var).GetAddress() == 0 {
+		if ap.(*P0Var).GetAddress() == 0 {
 			if n < 4 {
-				putOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+				putOp("sw", ap.(*P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
 			} else {
-				putMemOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+				putMemOp("sw", ap.(*P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
 			}
-			releaseReg(ap.(P0Var).GetRegister())
+			releaseReg(ap.(*P0Var).GetRegister())
 		} else {
 			if n < 4 {
-				putMemOp("la", "$a"+strconv.Itoa(n), ap.(P0Var).GetRegister(), strconv.Itoa(ap.(P0Var).GetAddress()))
+				putMemOp("la", "$a"+strconv.Itoa(n), ap.(*P0Var).GetRegister(), strconv.Itoa(ap.(*P0Var).GetAddress()))
 			} else {
 				r = obtainReg()
-				putMemOp("la", r, ap.(P0Var).GetRegister(), strconv.Itoa(ap.(P0Var).GetAddress()))
+				putMemOp("la", r, ap.(*P0Var).GetRegister(), strconv.Itoa(ap.(*P0Var).GetAddress()))
 				putMemOp("sw", r, SP, strconv.Itoa(-4*(n+1-4)))
 				releaseReg(r)
 			}
@@ -673,7 +673,7 @@ func genActualPara(ap interface{}, fp Entry, n int) {
 				if !apisReg {
 					ap = loadItem(ap)
 				}
-				putMemOp("sw", ap.(P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
+				putMemOp("sw", ap.(*P0Var).GetRegister(), SP, strconv.Itoa(-4*(n+1-4)))
 				releaseReg(ap.(Reg).reg)
 			}
 		} else {
@@ -683,34 +683,34 @@ func genActualPara(ap interface{}, fp Entry, n int) {
 	}
 }
 
-func genCall(pr P0Proc) {
+func (cg *CGmips) GenCall(pr P0Proc) {
 	putInstr("jal", pr.GetName())
 }
 
-func genRead(x P0Var) {
+func (cg *CGmips) GenRead(x P0Var) {
 	putInstr("li $v0, 5", "")
 	putInstr("syscall", "")
 	adr := strconv.Itoa(x.GetAddress())
 	putMemOp("sw", "$v0", x.GetRegister(), adr)
 }
 
-func genWrite(x P0Type) {
+func (cg *CGmips) GenWrite(x P0Type) {
 	loadItemReg(x, "$a0")
 	putInstr("li $v0, 1", "")
 	putInstr("syscall", "")
 }
 
-func genWriteln() {
+func (cg *CGmips) GenWriteln() {
 	putInstr("li $v0, 11", "")
 	putInstr("li $a0, '\\n'", "")
 	putInstr("syscall", "")
 }
 
-func genSeq() {
+func (cg *CGmips) GenSeq() {
 	//pass
 }
 
-func genThen(x interface{}) interface{} {
+func (cg *CGmips) GenThen(x interface{}) interface{} {
 	_, xisCond := x.(*Cond)
 	if !xisCond {
 		x = loadBool(x.(P0Type))
@@ -724,33 +724,33 @@ func genThen(x interface{}) interface{} {
 	return x
 }
 
-func genIfThen(x Cond) {
+func (cg *CGmips) GenIfThen(x Cond) {
 	putLab(x.labA, "")
 }
 
-func genElse(x Cond) string {
+func (cg *CGmips) GenElse(x Cond) string {
 	lab := newLabel()
 	putInstr("b", lab)
 	putLab(x.labA, "")
 	return lab
 }
 
-func genIfElse(y []string) {
+func (cg *CGmips) GenIfElse(y []string) {
 	putLab(y, "")
 }
 
-func genWhile() {
+func (cg *CGmips) GenWhile() {
 	lab := newLabel()
 	var lab1 []string
 	lab1 = append(lab1, lab)
 	putLab(lab1, "")
 }
 
-func genDo(x interface{}) interface{} {
+func (cg *CGmips) GenDo(x interface{}) interface{} {
 	return genThen(x)
 }
 
-func genWhileDo(lab string, x Cond) {
+func (cg *CGmips) GenWhileDo(lab string, x Cond) {
 	putInstr("b", lab)
 	putLab(x.labA, "")
 }
