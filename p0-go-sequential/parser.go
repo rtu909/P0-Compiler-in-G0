@@ -84,9 +84,69 @@ func factor() Entry {
 			getSym()
 		}
 	}
+	var x Entry
 	if sym == IDENT {
-		// CONTINUE FROM HERE
+		x = st.Find(val.(string))
+
+		_, xIsVar := x.GetP0Type().(*P0Var)
+		_, xIsRef := x.GetP0Type().(*P0Ref)
+		xAsConst, xIsConst := x.(*P0Const)
+
+		if xIsVar || xIsRef {
+			x = cg.GenVar(x)
+			getSym()
+		} else if xIsConst {
+			x = &P0Const{
+				x.GetP0Type(),
+				x.GetName(),
+				x.GetLevel(),
+				xAsConst.GetValue().(int),
+			}
+			x = cg.GenConst(x)
+			getSym()
+		} else {
+			mark("expression expected")
+		}
+		x = selector(x)
+	} else if sym == NUMBER {
+		x = &P0Const{
+			nil, // TODO: Check if nil is supposed to go here
+			x.GetName(),
+			x.GetLevel(),
+			val,
+		}
+		x = cg.GenConst(x)
+		getSym()
+	} else if sym == LPAREN {
+		getSym()
+		x = expression()
+		if sym == RPAREN {
+			getSym()
+		} else {
+			mark(") expected")
+		}
+	} else if sym == NOT {
+		getSym()
+		x = factor()
+		xAsBool, xIsBool := x.GetP0Type().(*P0Bool)
+		xAsConst2, xIsConst2 := x.(*P0Const)
+		if !xIsBool {
+			mark("not boolean")
+		} else if xIsConst2 {
+			// Toggle x
+			xAsConst2.SetValue(1 - xAsConst2.GetValue().(int))
+		} else {
+			x = cg.GenUnaryOp(NOT, x)
+		}
+	} else {
+		x = &P0Const{
+			nil, // TODO: Check if nil is supposed to go here
+			x.GetName(),
+			x.GetLevel(),
+			0,
+		}
 	}
+	return x
 }
 
 func term() Entry {
