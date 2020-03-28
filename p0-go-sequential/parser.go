@@ -451,14 +451,16 @@ func statement() Entry {
 				label = cg.GenElse(x, y) // TODO: GenElse needs to return something
 			}
 			getSym()
-			z := statement()
+			z := statement() // Where is this used?
 			_, xIsBool = x.GetP0Type().(*P0Bool)
 			if xIsBool {
-				x = cg.GenIfElse(label)
+				cg.GenIfElse(label)
+				x = nil
 			}
 		} else {
 			_, xIsBool = x.GetP0Type().(*P0Bool)
-			x = cg.GenIfThen(x) // TODO: GenIfThen needs to return something
+			cg.GenIfThen(x) // TODO: GenIfThen needs to return something
+			x = nil
 		}
 	} else if sym == WHILE {
 		getSym()

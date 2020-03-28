@@ -552,7 +552,7 @@ func (cg *CGmips) GenSelect(record Entry, field Entry) Entry {
 	return record
 }
 
-func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
+func (cg *CGmips) GenIndex(x Entry, y Entry) Entry {
 	_, yisConst := y.(*P0Const)
 	if yisConst {
 		offset := (y.(*P0Const).GetValue().(int) - x.(*P0Var).GetP0Type().(*P0Array).lower) * x.(*P0Var).GetSize()
@@ -562,13 +562,13 @@ func (cg *CGmips) GenIndex(x Entry, y interface{}) interface{} {
 		if !yisReg {
 			y = cg.loadItem(y.(P0Type))
 		}
-		cg.putOp("sub", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetP0Type().(*P0Array).lower))
-		cg.putOp("mul", y.(Reg).reg, y.(Reg).reg, strconv.Itoa(x.(*P0Var).GetSize()))
+		cg.putOp("sub", y.(*Reg).reg, y.(*Reg).reg, strconv.Itoa(x.(*P0Var).GetP0Type().(*P0Array).lower))
+		cg.putOp("mul", y.(*Reg).reg, y.(*Reg).reg, strconv.Itoa(x.(*P0Var).GetSize()))
 		if x.(*P0Var).GetRegister() != R0 {
-			cg.putOp("sub", y.(Reg).reg, x.(*P0Var).reg, y.(Reg).reg)
+			cg.putOp("sub", y.(*Reg).reg, x.(*P0Var).reg, y.(*Reg).reg)
 			cg.releaseReg(x.(*P0Var).GetRegister())
 		}
-		x.(*P0Var).SetRegister(y.(Reg).reg)
+		x.(*P0Var).SetRegister(y.(*Reg).reg)
 	}
 	//p_0type := x.(*P0Array).GetElementType()
 	x = &P0Ref{x.(*P0Array).GetElementType(), x.GetName(), x.GetLevel(), "", 0, 0}
@@ -647,7 +647,7 @@ func (cg *CGmips) GenLocalVars(sc []Entry, start int) int {
 	return s
 }
 
-func (cg *CGmips) GenProcStart(string, fp []Entry) int {
+func (cg *CGmips) GenProcStart(unused string, fp []Entry) int {
 	cg.curlev = cg.curlev + 1
 	n := len(fp)
 	for i := 0; i < n; i++ {
@@ -695,7 +695,7 @@ func (cg *CGmips) GenProcEntry(ident string, parsize int, localsize int) {
 	cg.putOp("sub", SP, FP, strconv.Itoa(localsize+8))
 }
 
-func (cg *CGmips) GenProcExit(Entry, parsize int, localsize int) {
+func (cg *CGmips) GenProcExit(unused Entry, parsize, localsize int) {
 	cg.curlev = cg.curlev - 1
 	cg.putOp("add", SP, FP, strconv.Itoa(parsize))
 	cg.putMemOp("lw", LNK, FP, strconv.Itoa(-8))
