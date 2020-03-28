@@ -102,8 +102,8 @@ func number() {
 		val = tempVal + 10*val.(int) //weird stuff, check this
 		getChar()
 	}
-	fmt.Println(int(math.Pow(2, 31)))
-	fmt.Println(val.(int))
+	//fmt.Println(int(math.Pow(2, 31)))
+	//fmt.Println(val.(int))
 	if val.(int) >= int(math.Pow(2, 31)) {
 		mark("number too large")
 		val = 0
@@ -122,13 +122,13 @@ func identKW() {
 		getChar()
 	}
 	val = source[start : index-1] //originally -1
-	fmt.Println(val)
+	//fmt.Println(val)
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
-	fmt.Println(sym)
+	//fmt.Println(sym)
 	//if val is not in KEYWORDS dictionary, then sym is IDENT
 	if !exists {
-		fmt.Println("didn't work")
+		//fmt.Println("didn't work")
 		sym = IDENT
 	}
 }
@@ -204,11 +204,11 @@ func getSym() {
 	} else if ch == "." {
 		getChar()
 		sym = PERIOD
-		fmt.Println("period")
+		//fmt.Println("period")
 	} else if ch == "(" {
 		getChar()
 		sym = LPAREN
-		fmt.Println("parentheses")
+		//fmt.Println("parentheses")
 	} else if ch == ")" {
 		getChar()
 		sym = RPAREN

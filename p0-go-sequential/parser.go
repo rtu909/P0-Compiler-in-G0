@@ -338,6 +338,7 @@ func statement() Entry {
 		}
 	}
 	if sym == IDENT {
+		print(val.(string))
 		x = st.Find(val.(string))
 		getSym()
 		switch x.(type) {
