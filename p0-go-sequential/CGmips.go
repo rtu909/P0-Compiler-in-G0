@@ -450,12 +450,12 @@ func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
 	_, xisCond := x.(*Cond)
 	if op == MINUS {
 		if xisVar {
-			x = loadItem(x.(P0Type))
+			x = cg.loadItem(x.(P0Type))
 		}
 		cg.putOp("sub", x.(*P0Var).GetRegister(), R0, x.(*P0Var).GetRegister())
 	} else if op == NOT {
 		if !xisCond {
-			x = loadBool(x.(P0Type))
+			x = cg.loadBool(x.(P0Type))
 		}
 		str1 := x.(Cond).cond
 		str2, _ := strconv.Atoi(str1)
@@ -464,7 +464,7 @@ func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
 		x.(*Cond).SetLabB(x.(Cond).labA)
 	} else if op == AND {
 		if !xisCond {
-			x = loadBool(x.(P0Type))
+			x = cg.loadBool(x.(P0Type))
 		}
 		str1 := x.(Cond).cond
 		str2, _ := strconv.Atoi(str1)
@@ -474,7 +474,7 @@ func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
 		cg.putLab(x.(Cond).labB, "")
 	} else if op == OR {
 		if !xisCond {
-			x = loadBool(x.(P0Type))
+			x = cg.loadBool(x.(P0Type))
 		}
 		str1 := x.(Cond).cond
 		str2, _ := strconv.Atoi(str1)
@@ -490,15 +490,15 @@ func (cg *CGmips) GenUnaryOp(op int, x interface{}) interface{} {
 
 func (cg *CGmips) GenBinaryOp(op int, x Cond, y interface{}) interface{} {
 	if op == PLUS {
-		y = put("add", x, y)
+		y = cg.put("add", x, y)
 	} else if op == MINUS {
-		y = put("sub", x, y)
+		y = cg.put("sub", x, y)
 	} else if op == TIMES {
-		y = put("mul", x, y)
+		y = cg.put("mul", x, y)
 	} else if op == DIV {
-		y = put("div", x, y)
+		y = cg.put("div", x, y)
 	} else if op == MOD {
-		y = put("mod", x, y)
+		y = cg.put("mod", x, y)
 	} else if op == AND {
 		_, yisCond := y.(*Cond)
 		if !yisCond {
@@ -759,7 +759,7 @@ func (cg *CGmips) GenSeq() {
 	//pass
 }
 
-func (cg *CGmips) GenThen(x interface{}) interface{} {
+func (cg *CGmips) GenThen(x interface{}) Entry {
 	_, xisCond := x.(*Cond)
 	if !xisCond {
 		x = cg.loadBool(x.(P0Type))
@@ -777,15 +777,15 @@ func (cg *CGmips) GenIfThen(x Cond) {
 	cg.putLab(x.labA, "")
 }
 
-func (cg *CGmips) GenElse(x Cond) string {
+func (cg *CGmips) GenElse(x, y Entry) string {
 	lab := cg.newLabel()
 	cg.putInstr("b", lab)
-	cg.putLab(x.labA, "")
+	cg.putLab(x.(*Cond).labA, "")
 	return lab
 }
 
-func (cg *CGmips) GenIfElse(y []string) {
-	cg.putLab(y, "")
+func (cg *CGmips) GenIfElse(x, y, z Entry) {
+	cg.putLab(y.(*Cond).labA[:], "")
 }
 
 func (cg *CGmips) GenWhile() {
@@ -795,11 +795,12 @@ func (cg *CGmips) GenWhile() {
 	cg.putLab(lab1, "")
 }
 
-func (cg *CGmips) GenDo(x interface{}) interface{} {
+func (cg *CGmips) GenDo(x Entry) Entry {
 	return cg.GenThen(x)
 }
 
-func (cg *CGmips) GenWhileDo(lab string, x Cond) {
-	cg.putInstr("b", lab)
-	cg.putLab(x.labA, "")
+func (cg *CGmips) GenWhileDo(lab, x, y Entry) Entry {
+	cg.putInstr("b", lab.(*Reg).reg)
+	cg.putLab(x.(*Cond).labA, "")
+	return nil
 }

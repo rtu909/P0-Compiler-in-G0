@@ -10,7 +10,6 @@ type CodeGenerator interface {
 	GenArray(P0Type) P0Type
 	GenGlobalVars(declaredVars []Entry, start int) int
 	GenLocalVars(declaredVars []Entry, start int) int
-	LoadItem(Entry) Entry
 	GenVar(Entry) Entry
 	GenConst(Entry) Entry
 	GenUnaryOp(op int, entry Entry) Entry

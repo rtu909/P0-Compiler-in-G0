@@ -58,7 +58,7 @@ func selector(x Entry) Entry {
 					if castSucceed && yAsConst.GetValue().(int) < lowerbound || yAsConst.GetValue().(int) >= lowerbound+xAsArray.GetLength() {
 						mark("index out of bounds")
 					} else {
-						// x = CG.genIndex(x, y)
+						x = cg.GenIndex(x, y)
 					}
 				} else {
 					mark("index not integer")
