@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -60,6 +61,7 @@ func (cg *CGmips) putLab(lab []string, instr string) {
 		tuple := Triple{lab[0], instr, ""}
 		cg.asm = append(cg.asm, tuple)
 	} else {
+		fmt.Print("length of lab ", len(lab), "\n")
 		for i := 0; i < len(lab)-1; i++ {
 			tuple := Triple{lab[i], "", ""}
 			cg.asm = append(cg.asm, tuple)
@@ -140,7 +142,8 @@ func (cg *CGmips) GenProgEntry() {
 	cg.putInstr(".globl main", "")
 	cg.putInstr(".ent main", "")
 	var lab []string
-	cg.putLab(lab, "main")
+	lab = append(lab, "main")
+	cg.putLab(lab, "")
 }
 
 func (cg *CGmips) assembly(l string, i string, t string) string {
