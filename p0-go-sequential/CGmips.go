@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -60,6 +61,7 @@ func (cg *CGmips) putLab(lab []string, instr string) {
 		tuple := Triple{lab[0], instr, ""}
 		cg.asm = append(cg.asm, tuple)
 	} else {
+		fmt.Print("length of lab ", len(lab), "\n")
 		for i := 0; i < len(lab)-1; i++ {
 			tuple := Triple{lab[i], "", ""}
 			cg.asm = append(cg.asm, tuple)
@@ -140,7 +142,8 @@ func (cg *CGmips) GenProgEntry() {
 	cg.putInstr(".globl main", "")
 	cg.putInstr(".ent main", "")
 	var lab []string
-	cg.putLab(lab, "main")
+	lab = append(lab, "main")
+	cg.putLab(lab, "")
 }
 
 func (cg *CGmips) assembly(l string, i string, t string) string {
@@ -267,7 +270,7 @@ func (cg *CGmips) NewCond(tp interface{}, cond string, left interface{}, right i
 	labA = append(labA, cg.newLabel())
 	labB = append(labB, cg.newLabel())
 	c := Cond{
-		tp:    tp.(P0Type),
+		tp:    tp,
 		cond:  cond,
 		left:  left,
 		right: right,
@@ -357,9 +360,8 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	}
 	_, yisConst := y.(*P0Const)
 	if yisConst {
-		y := y.(P0Const)
 		cg.testRange(y)
-		cg.putOp(cd, x.(Reg).reg, r, y.GetValue().(string))
+		cg.putOp(cd, x.(*Reg).reg, r, strconv.Itoa(y.(*P0Const).GetValue().(int)))
 	} else {
 		_, yisReg := y.(*Reg)
 		if !yisReg {
