@@ -24,7 +24,7 @@ var GPRegs = []string{"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$
 var R0 = "$0"
 var FP = "$fp"
 var SP = "$sp"
-var LNK = "$a3"
+var LNK = "$ra"
 var A0 = "$a0"
 var A1 = "$a1"
 var A2 = "$a2"
@@ -335,29 +335,28 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	r := ""
 	if !xisReg {
 		x = cg.loadItem(x.(P0Type))
-	} else {
-		var regList []string
-		regList = append(regList, R0)
-		regList = append(regList, A0)
-		regList = append(regList, A1)
-		regList = append(regList, A2)
-		regList = append(regList, A3)
-		x := x.(Reg)
-		var regFound bool
-		regFound = false
+	}
+	var regList []string
+	regList = append(regList, R0)
+	regList = append(regList, A0)
+	regList = append(regList, A1)
+	regList = append(regList, A2)
+	regList = append(regList, A3)
+	var regFound bool
+	regFound = false
 
-		for i := 0; i < len(regList); i++ {
-			if regList[i] == x.reg {
-				regFound = true
-			}
-		}
-		if regFound {
-			r = x.reg
-			x.reg = cg.obtainReg()
-		} else {
-			r = x.reg
+	for i := 0; i < len(regList); i++ {
+		if regList[i] == x.(*Reg).reg {
+			regFound = true
 		}
 	}
+	if regFound {
+		r = x.(*Reg).reg
+		x.(*Reg).reg = cg.obtainReg()
+	} else {
+		r = x.(*Reg).reg
+	}
+
 	_, yisConst := y.(*P0Const)
 	if yisConst {
 		cg.testRange(y)
