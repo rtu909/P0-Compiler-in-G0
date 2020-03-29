@@ -102,7 +102,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 			if asRef.GetLevel() == -1 {
 				wg.asm = append(wg.asm, "i32.load")
 			} else if entry.GetLevel() == wg.currentLevel {
-				wg.asm = append(wg.asm, "i32.local $"+asRef.GetName())
+				wg.asm = append(wg.asm, "local.get $"+asRef.GetName())
 				wg.asm = append(wg.asm, "i32.load")
 			} else {
 				mark("WASM: ref level!")
@@ -236,7 +236,7 @@ func (wg *WasmGenerator) GenSelect(x Entry, f Entry) Entry {
 			if x.GetLevel() > 0 {
 				wg.asm = append(wg.asm, "local.get $"+x.GetName())
 			}
-			wg.asm = append(wg.asm, "i32.const "+string(f.(*P0Var).GetOffset()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(f.(*P0Var).GetOffset()))
 			wg.asm = append(wg.asm, "i32.add")
 			asRef.SetLevel(-1)
 			asRef.p0type = f.GetP0Type()
@@ -260,12 +260,12 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 		}
 		wg.LoadItem(y)
 		if arrayType.GetLowerBound() != 0 {
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetLowerBound()))
 			wg.asm = append(wg.asm, "i32.sub")
 		}
-		wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+		wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetElementType().GetSize()))
 		wg.asm = append(wg.asm, "i32.mul")
-		wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
+		wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(xAsVar.GetAddress()))
 		wg.asm = append(wg.asm, "i32.add")
 		x = &P0Ref{arrayType.GetElementType(), "", -1, "", 0, 0}
 	} else {
@@ -276,13 +276,13 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 		yAsConst, yIsConst := y.(*P0Const)
 		if yIsConst {
 			wg.asm = append(wg.asm, "i32.const "+
-				string((yAsConst.GetValue().(int)-arrayType.GetLowerBound())*arrayType.GetElementType().GetSize()))
+				strconv.Itoa((yAsConst.GetValue().(int)-arrayType.GetLowerBound())*arrayType.GetElementType().GetSize()))
 			wg.asm = append(wg.asm, "i32.add")
 		} else {
 			wg.LoadItem(y)
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetLowerBound()))
 			wg.asm = append(wg.asm, "i32.sub")
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetElementType().GetSize()))
 			wg.asm = append(wg.asm, "i32.mul")
 			wg.asm = append(wg.asm, "i32.add")
 		}
@@ -296,7 +296,7 @@ func (wg *WasmGenerator) GenAssign(x, y Entry) {
 	xAsRef, xIsRef := x.(*P0Ref)
 	if xIsVar {
 		if xAsVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(xAsVar.GetAddress()))
 		}
 		wg.LoadItem(y)
 		if xAsVar.GetLevel() == 0 {
@@ -375,7 +375,7 @@ func (wg *WasmGenerator) GenActualPara(ap, fp Entry, parameterNumber int) {
 	if asRef {
 		// Assume that ap is a Var
 		if ap.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+string(ap.(*P0Var).GetAddress()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(ap.(*P0Var).GetAddress()))
 		}
 	} else {
 		switch ap.(type) {
