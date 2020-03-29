@@ -330,7 +330,6 @@ func statement() Entry {
 			getSym()
 		}
 	}
-	println(sym)
 	if sym == IDENT {
 		x = st.Find(val.(string))
 		getSym()
@@ -610,14 +609,19 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 			mark("type name expected")
 		}
 	}
-	start := len(st.TopScope())
+	st.OpenScope()
 	for sym == VAR {
 		getSym()
-
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 		getElseMark(sym == SEMICOLON, "; expected")
 	}
-	varsize = generatorFunc(st.TopScope(), start)
+	localVarDecls := st.TopScope()
+	st.CloseScope()
+	for i := 0; i < len(localVarDecls); i++ {
+		localVarDecls[i].SetLevel(localVarDecls[i].GetLevel() - 1)
+		st.NewDecl(localVarDecls[i].GetName(), localVarDecls[i])
+	}
+	varsize = generatorFunc(localVarDecls, 0)
 	for sym == PROCEDURE {
 		getSym()
 		getElseMark(sym == IDENT, "procedure name expected")
@@ -704,7 +708,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	st.Init()
 	p := program()
 	if p != "" && !error {
-		fmt.Print("HERE IS TEH CODEZ:")
+		fmt.Println("HERE IS TEH CODEZ:\n")
 		fmt.Print(p)
 	} else {
 		print("Something went wrong in the parser and its not good :(")
