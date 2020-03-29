@@ -49,13 +49,13 @@ func selector(x Entry) Entry {
 		} else { // x[y]
 			getSym()
 			var y = expression()
-			xAsArray, xIsArray := x.(*P0Array)
+			xAsArray, xIsArray := x.GetP0Type().(*P0Array)
 			if xIsArray {
 				_, yIsInt := y.GetP0Type().(*P0Int)
 				if yIsInt {
 					var lowerbound = xAsArray.GetLowerBound()
 					yAsConst, castSucceed := y.(*P0Const)
-					if castSucceed && yAsConst.GetValue().(int) < lowerbound || yAsConst.GetValue().(int) >= lowerbound+xAsArray.GetLength() {
+					if castSucceed && (yAsConst.GetValue().(int) < lowerbound || yAsConst.GetValue().(int) >= lowerbound+xAsArray.GetLength()) {
 						mark("index out of bounds")
 					} else {
 						x = cg.GenIndex(x, y)
@@ -334,7 +334,7 @@ func statement() Entry {
 		x = st.Find(val.(string))
 		getSym()
 		switch x.(type) {
-		case *P0Var, *P0Int:
+		case *P0Var, *P0Ref:
 			x = cg.GenVar(x)
 			x = selector(x)
 			if sym == BECOMES {
