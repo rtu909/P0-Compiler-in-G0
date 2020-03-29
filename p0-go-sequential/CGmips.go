@@ -330,7 +330,7 @@ func (cg *CGmips) loadBool(x interface{}) interface{} {
 	return cg.NewCond(NE, r, R0, "")
 }
 
-func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
+func (cg *CGmips) put(cd string, x Entry, y interface{}) interface{} {
 	_, xisReg := x.(*Reg)
 	r := ""
 	if !xisReg {
@@ -342,7 +342,7 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 		regList = append(regList, A1)
 		regList = append(regList, A2)
 		regList = append(regList, A3)
-		x := x.(Reg)
+		x := x.(*Reg)
 		var regFound bool
 		regFound = false
 
