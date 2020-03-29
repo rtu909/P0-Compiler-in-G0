@@ -1,5 +1,7 @@
 package main
 
+import "strconv"
+
 type WasmGenerator struct {
 	currentLevel int
 	memorySize   int
@@ -91,7 +93,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 		} else if asVar.GetLevel() == wg.currentLevel {
 			wg.asm = append(wg.asm, "local.get $"+asVar.GetName())
 		} else if asVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+string(asVar.GetAddress()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(asVar.GetAddress()))
 			wg.asm = append(wg.asm, "i32.load")
 		}
 	} else {
@@ -108,7 +110,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 		} else {
 			asConst, isConst := entry.(*P0Const)
 			if isConst {
-				wg.asm = append(wg.asm, "i32.const "+string(asConst.GetValue().(int)))
+				wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(asConst.GetValue().(int)))
 			}
 		}
 	}
@@ -322,7 +324,7 @@ func (wg *WasmGenerator) GenProgEntry() { // NOTE: originally had an unused para
 }
 
 func (wg *WasmGenerator) GenProgExit() string {
-	wg.asm = append(wg.asm, ")\n(memory "+string(wg.memorySize/(2<<16)+1)+")\n(start $program)\n")
+	wg.asm = append(wg.asm, ")\n(memory "+strconv.Itoa(wg.memorySize/(2<<16)+1)+")\n(start $program)\n)")
 	var theCode string = ""
 	for _, line := range wg.asm {
 		theCode += line + "\n"
