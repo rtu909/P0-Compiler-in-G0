@@ -330,6 +330,7 @@ func statement() Entry {
 			getSym()
 		}
 	}
+	println(sym)
 	if sym == IDENT {
 		x = st.Find(val.(string))
 		getSym()
@@ -370,6 +371,7 @@ func statement() Entry {
 			i := 0
 			if sym == LPAREN {
 				getSym()
+				print(sym)
 				if doesContain(FIRSTEXPRESSION[:], sym) {
 					y = expression()
 					if i < len(fp) {
