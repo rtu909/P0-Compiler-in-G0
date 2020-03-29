@@ -31,13 +31,16 @@ func selector(x Entry) Entry {
 			if sym == IDENT {
 				asRec, isRec := x.GetP0Type().(*P0Record)
 				if isRec {
+					fieldFound := false
 					for _, f := range asRec.GetFields() {
-						if f == val {
+						if f.GetName() == val.(string) {
 							x = cg.GenSelect(x, f)
+							fieldFound = true
 							break
-						} else {
-							mark("not a field")
 						}
+					}
+					if !fieldFound {
+						mark("not a field")
 					}
 					getSym()
 				} else {
@@ -49,13 +52,13 @@ func selector(x Entry) Entry {
 		} else { // x[y]
 			getSym()
 			var y = expression()
-			xAsArray, xIsArray := x.(*P0Array)
+			xAsArray, xIsArray := x.GetP0Type().(*P0Array)
 			if xIsArray {
 				_, yIsInt := y.GetP0Type().(*P0Int)
 				if yIsInt {
 					var lowerbound = xAsArray.GetLowerBound()
 					yAsConst, castSucceed := y.(*P0Const)
-					if castSucceed && yAsConst.GetValue().(int) < lowerbound || yAsConst.GetValue().(int) >= lowerbound+xAsArray.GetLength() {
+					if castSucceed && (yAsConst.GetValue().(int) < lowerbound || yAsConst.GetValue().(int) >= lowerbound+xAsArray.GetLength()) {
 						mark("index out of bounds")
 					} else {
 						x = cg.GenIndex(x, y)
@@ -330,12 +333,11 @@ func statement() Entry {
 			getSym()
 		}
 	}
-	println(sym)
 	if sym == IDENT {
 		x = st.Find(val.(string))
 		getSym()
 		switch x.(type) {
-		case *P0Var, *P0Int:
+		case *P0Var, *P0Ref:
 			x = cg.GenVar(x)
 			x = selector(x)
 			if sym == BECOMES {
@@ -374,11 +376,7 @@ func statement() Entry {
 				if doesContain(FIRSTEXPRESSION[:], sym) {
 					y = expression()
 					if i < len(fp) {
-						_, paramIsInt := fp[i].GetP0Type().(*P0Int)
-						_, actualParamIsInt := y.GetP0Type().(*P0Int)
-						_, paramIsBool := fp[i].GetP0Type().(*P0Bool)
-						_, actualParamIsBool := y.GetP0Type().(*P0Bool)
-						if (paramIsInt && actualParamIsInt) || (paramIsBool && actualParamIsBool) { // TODO: How to do this properly in Go?
+						if typesEqual(fp[i].GetP0Type(), y.GetP0Type()) { // TODO: How to do this properly in Go?
 							if xIsProc {
 								cg.GenActualPara(y, fp[i], i)
 							}
@@ -393,7 +391,7 @@ func statement() Entry {
 						getSym()
 						y = expression()
 						if i < len(fp) {
-							if fp[i] == y.GetP0Type() { // TODO: How to do this properly in Go?
+							if typesEqual(fp[i].GetP0Type(), y.GetP0Type()) { // TODO: How to do this properly in Go?
 								if xIsProc {
 									cg.GenActualPara(y, fp[i], i)
 								}
@@ -527,12 +525,8 @@ func typ() P0Type {
 		}
 		getElseMark(sym == END, "'end' expected")
 		r := st.TopScope()
-		rCasted := make([]P0Type, 0)
-		for _, val := range r {
-			rCasted = append(rCasted, val.(P0Type))
-		}
 		st.CloseScope()
-		typeToReturn = cg.GenRecord(&P0Record{fields: rCasted})
+		typeToReturn = cg.GenRecord(&P0Record{fields: r})
 	} else {
 		typeToReturn = nil
 	}
@@ -610,14 +604,19 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 			mark("type name expected")
 		}
 	}
-	start := len(st.TopScope())
+	st.OpenScope()
 	for sym == VAR {
 		getSym()
-
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 		getElseMark(sym == SEMICOLON, "; expected")
 	}
-	varsize = generatorFunc(st.TopScope(), start)
+	localVarDecls := st.TopScope()
+	st.CloseScope()
+	for i := 0; i < len(localVarDecls); i++ {
+		localVarDecls[i].SetLevel(localVarDecls[i].GetLevel() - 1)
+		st.NewDecl(localVarDecls[i].GetName(), localVarDecls[i])
+	}
+	varsize = generatorFunc(localVarDecls, 0)
 	for sym == PROCEDURE {
 		getSym()
 		getElseMark(sym == IDENT, "procedure name expected")
@@ -671,11 +670,11 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 
 func program() string {
 	st.NewDecl("boolean", cg.GenBool(&P0Bool{}))
-	st.NewDecl("integer", cg.GenBool(&P0Int{}))
-	st.NewDecl("true", &P0Const{&P0Bool{}, "", 0, 1})
-	st.NewDecl("false", &P0Const{&P0Bool{}, "", 0, 0})
-	st.NewDecl("read", &P0StdProc{nil, "", 0, []P0Type{&P0Ref{&P0Int{}, "", 0, "", 0, 0}}})
-	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{&P0Int{}, "", 0, "", 0, 0}}})
+	st.NewDecl("integer", cg.GenInt(&P0Int{}))
+	st.NewDecl("true", &P0Const{cg.GenBool(&P0Bool{}), "", 0, 1})
+	st.NewDecl("false", &P0Const{cg.GenBool(&P0Bool{}), "", 0, 0})
+	st.NewDecl("read", &P0StdProc{nil, "", 0, []P0Type{&P0Ref{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
+	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
 	st.NewDecl("writeln", &P0StdProc{nil, "", 0, []P0Type{}})
 	cg.GenProgStart()
 	getElseMark(sym == PROGRAM, "'program expected")
@@ -704,7 +703,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	st.Init()
 	p := program()
 	if p != "" && !error {
-		fmt.Print("HERE IS TEH CODEZ:")
+		fmt.Println("HERE IS TEH CODEZ:\n")
 		fmt.Print(p)
 	} else {
 		print("Something went wrong in the parser and its not good :(")
@@ -767,5 +766,35 @@ func getElseMark(predicate bool, markMessage string) {
 		getSym()
 	} else {
 		mark(markMessage)
+	}
+}
+
+// typesEqual checks if two P0 types are equal. It uses duck typing I guess ;-;
+func typesEqual(a, b P0Type) bool {
+	switch t := a.(type) {
+	case *P0Int:
+		_, bIsInt := b.(*P0Int)
+		return bIsInt
+	case *P0Bool:
+		_, bIsBool := b.(*P0Bool)
+		return bIsBool
+	case *P0Record:
+		aAsRec := a.(*P0Record)
+		bAsRec, bIsRec := b.(*P0Record)
+		if !bIsRec || len(aAsRec.GetFields()) != len(bAsRec.GetFields()) {
+			return false
+		}
+		for i := 0; i < len(aAsRec.GetFields()); i++ {
+			if !typesEqual(aAsRec.GetFields()[i].GetP0Type(), bAsRec.GetFields()[i].GetP0Type()) {
+				return false
+			}
+		}
+		return true
+	case *P0Array:
+		aAsArray := a.(*P0Array)
+		bAsArray, bIsArray := b.(*P0Array)
+		return bIsArray && typesEqual(aAsArray.GetElementType(), bAsArray.GetElementType())
+	default:
+		panic(fmt.Sprint("Unrecognized type %v", t))
 	}
 }

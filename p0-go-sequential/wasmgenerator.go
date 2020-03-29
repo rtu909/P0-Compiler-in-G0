@@ -70,7 +70,7 @@ func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) int {
 func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) int {
 	for index, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
-		if isVar && index >= start {
+		if isVar && start <= index {
 			switch asVar.GetP0Type().(type) {
 			case *P0Int, *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+entry.GetName()+" i32)")
@@ -102,7 +102,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 			if asRef.GetLevel() == -1 {
 				wg.asm = append(wg.asm, "i32.load")
 			} else if entry.GetLevel() == wg.currentLevel {
-				wg.asm = append(wg.asm, "i32.local $"+asRef.GetName())
+				wg.asm = append(wg.asm, "local.get $"+asRef.GetName())
 				wg.asm = append(wg.asm, "i32.load")
 			} else {
 				mark("WASM: ref level!")
@@ -147,18 +147,18 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 	case MINUS:
 		wg.asm = append(wg.asm, "i32.const -1")
 		wg.asm = append(wg.asm, "i32.mul")
-		entry = &P0Var{&P0Int{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	case NOT:
 		wg.asm = append(wg.asm, "i32.eqz")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case AND:
 		wg.asm = append(wg.asm, "if (result i32)")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case OR:
 		wg.asm = append(wg.asm, "if (result i32)")
 		wg.asm = append(wg.asm, "i32.const 1")
 		wg.asm = append(wg.asm, "else")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	default:
 		mark("WASM: unary operator?")
 	}
@@ -182,18 +182,18 @@ func (wg *WasmGenerator) GenBinaryOp(op int, x, y Entry) Entry {
 		case MOD:
 			wg.asm = append(wg.asm, "i32.rem_s")
 		}
-		x = &P0Var{&P0Int{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	case AND:
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "else")
 		wg.asm = append(wg.asm, "i32.const 0")
 		wg.asm = append(wg.asm, "end")
-		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case OR:
 		// x should already be on the stack b/c magic
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "end")
-		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	default:
 		panic("Unrecognized binary operator")
 	}
@@ -219,7 +219,7 @@ func (wg *WasmGenerator) GenRelation(op int, x Entry, y Entry) Entry {
 	default:
 		panic("Unrecognized relational operator")
 	}
-	x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+	x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	return x
 }
 
@@ -236,7 +236,7 @@ func (wg *WasmGenerator) GenSelect(x Entry, f Entry) Entry {
 			if x.GetLevel() > 0 {
 				wg.asm = append(wg.asm, "local.get $"+x.GetName())
 			}
-			wg.asm = append(wg.asm, "i32.const "+string(f.(*P0Var).GetOffset()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(f.(*P0Var).GetOffset()))
 			wg.asm = append(wg.asm, "i32.add")
 			asRef.SetLevel(-1)
 			asRef.p0type = f.GetP0Type()
@@ -260,12 +260,12 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 		}
 		wg.LoadItem(y)
 		if arrayType.GetLowerBound() != 0 {
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetLowerBound()))
 			wg.asm = append(wg.asm, "i32.sub")
 		}
-		wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+		wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetElementType().GetSize()))
 		wg.asm = append(wg.asm, "i32.mul")
-		wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
+		wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(xAsVar.GetAddress()))
 		wg.asm = append(wg.asm, "i32.add")
 		x = &P0Ref{arrayType.GetElementType(), "", -1, "", 0, 0}
 	} else {
@@ -276,13 +276,13 @@ func (wg *WasmGenerator) GenIndex(x Entry, y Entry) Entry {
 		yAsConst, yIsConst := y.(*P0Const)
 		if yIsConst {
 			wg.asm = append(wg.asm, "i32.const "+
-				string((yAsConst.GetValue().(int)-arrayType.GetLowerBound())*arrayType.GetElementType().GetSize()))
+				strconv.Itoa((yAsConst.GetValue().(int)-arrayType.GetLowerBound())*arrayType.GetElementType().GetSize()))
 			wg.asm = append(wg.asm, "i32.add")
 		} else {
 			wg.LoadItem(y)
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetLowerBound()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetLowerBound()))
 			wg.asm = append(wg.asm, "i32.sub")
-			wg.asm = append(wg.asm, "i32.const "+string(arrayType.GetElementType().GetSize()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(arrayType.GetElementType().GetSize()))
 			wg.asm = append(wg.asm, "i32.mul")
 			wg.asm = append(wg.asm, "i32.add")
 		}
@@ -296,7 +296,7 @@ func (wg *WasmGenerator) GenAssign(x, y Entry) {
 	xAsRef, xIsRef := x.(*P0Ref)
 	if xIsVar {
 		if xAsVar.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+string(xAsVar.GetAddress()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(xAsVar.GetAddress()))
 		}
 		wg.LoadItem(y)
 		if xAsVar.GetLevel() == 0 {
@@ -375,7 +375,7 @@ func (wg *WasmGenerator) GenActualPara(ap, fp Entry, parameterNumber int) {
 	if asRef {
 		// Assume that ap is a Var
 		if ap.GetLevel() == -2 {
-			wg.asm = append(wg.asm, "i32.const "+string(ap.(*P0Var).GetAddress()))
+			wg.asm = append(wg.asm, "i32.const "+strconv.Itoa(ap.(*P0Var).GetAddress()))
 		}
 	} else {
 		switch ap.(type) {
@@ -394,7 +394,7 @@ func (wg *WasmGenerator) GenCall(pr Entry) {
 func (wg *WasmGenerator) GenRead(x Entry) {
 	wg.asm = append(wg.asm, "call $read")
 	// Dr. Sekerinski's 'hack' from the email I sent him
-	y := &P0Var{&P0Int{}, "", -1, "", 0, 0}
+	y := &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	wg.GenAssign(x, y)
 }
 

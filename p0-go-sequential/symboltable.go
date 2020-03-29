@@ -149,7 +149,7 @@ type P0Record struct {
 	name   string
 	size   int
 	level  int
-	fields []P0Type
+	fields []Entry
 }
 
 func (p0record *P0Record) GetP0Type() P0Type {
@@ -180,7 +180,7 @@ func (p0record *P0Record) SetSize(newSize int) {
 	(*p0record).size = newSize
 }
 
-func (p0record *P0Record) GetFields() []P0Type {
+func (p0record *P0Record) GetFields() []Entry {
 	return (*p0record).fields
 }
 
