@@ -87,7 +87,7 @@ func (wg *WasmGenerator) LoadItem(entry Entry) Entry {
 	asVar, isVar := entry.(*P0Var)
 	if isVar {
 		if asVar.GetLevel() == 0 {
-			wg.asm = append(wg.asm, "global get $"+asVar.GetName())
+			wg.asm = append(wg.asm, "global.get $"+asVar.GetName())
 		} else if asVar.GetLevel() == wg.currentLevel {
 			wg.asm = append(wg.asm, "local.get $"+asVar.GetName())
 		} else if asVar.GetLevel() == -2 {
@@ -325,7 +325,7 @@ func (wg *WasmGenerator) GenProgExit() string {
 	wg.asm = append(wg.asm, ")\n(memory "+string(wg.memorySize/(2<<16)+1)+")\n(start $program)\n")
 	var theCode string = ""
 	for _, line := range wg.asm {
-		theCode += line
+		theCode += line + "\n"
 	}
 	return theCode
 }
