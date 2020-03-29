@@ -409,7 +409,7 @@ func statement() Entry {
 					mark("too few parameters")
 				} else if !xIsProc { // x is P0StdProc
 					if x.GetName() == "read" {
-						cg.GenRead(y) // TODO: continue from here
+						cg.GenRead(y)
 					} else if x.GetName() == "write" {
 						cg.GenWrite(y)
 					} else if x.GetName() == "writeln" {
