@@ -31,13 +31,16 @@ func selector(x Entry) Entry {
 			if sym == IDENT {
 				asRec, isRec := x.GetP0Type().(*P0Record)
 				if isRec {
+					fieldFound := false
 					for _, f := range asRec.GetFields() {
-						if f == val {
+						if f.GetName() == val.(string) {
 							x = cg.GenSelect(x, f)
+							fieldFound = true
 							break
-						} else {
-							mark("not a field")
 						}
+					}
+					if !fieldFound {
+						mark("not a field")
 					}
 					getSym()
 				} else {
@@ -522,12 +525,8 @@ func typ() P0Type {
 		}
 		getElseMark(sym == END, "'end' expected")
 		r := st.TopScope()
-		rCasted := make([]P0Type, 0)
-		for _, val := range r {
-			rCasted = append(rCasted, val.(P0Type))
-		}
 		st.CloseScope()
-		typeToReturn = cg.GenRecord(&P0Record{fields: rCasted})
+		typeToReturn = cg.GenRecord(&P0Record{fields: r})
 	} else {
 		typeToReturn = nil
 	}
@@ -786,7 +785,7 @@ func typesEqual(a, b P0Type) bool {
 			return false
 		}
 		for i := 0; i < len(aAsRec.GetFields()); i++ {
-			if !typesEqual(aAsRec.GetFields()[i], bAsRec.GetFields()[i]) {
+			if !typesEqual(aAsRec.GetFields()[i].GetP0Type(), bAsRec.GetFields()[i].GetP0Type()) {
 				return false
 			}
 		}
