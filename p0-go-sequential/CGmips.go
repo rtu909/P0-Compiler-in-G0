@@ -267,7 +267,7 @@ func (cg *CGmips) NewCond(tp interface{}, cond string, left interface{}, right i
 	labA = append(labA, cg.newLabel())
 	labB = append(labB, cg.newLabel())
 	c := Cond{
-		tp:    tp.(P0Type),
+		tp:    tp,
 		cond:  cond,
 		left:  left,
 		right: right,
@@ -357,9 +357,8 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 	}
 	_, yisConst := y.(*P0Const)
 	if yisConst {
-		y := y.(P0Const)
 		cg.testRange(y)
-		cg.putOp(cd, x.(Reg).reg, r, y.GetValue().(string))
+		cg.putOp(cd, x.(*Reg).reg, r, strconv.Itoa(y.(*P0Const).GetValue().(int)))
 	} else {
 		_, yisReg := y.(*Reg)
 		if !yisReg {
