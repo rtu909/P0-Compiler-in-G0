@@ -131,7 +131,7 @@ func (cg *CGmips) GenGlobalVars(declaredVars []Entry, start int) int {
 			var labs []string
 			labs = append(labs, strconv.Itoa(declaredVars[i].(*P0Var).GetAddress()))
 
-			cg.putLab(labs, ".space"+strconv.Itoa(declaredVars[i].GetSize()))
+			cg.putLab(labs, ".space "+strconv.Itoa(declaredVars[i].GetSize()))
 		}
 	}
 	cg.putInstr(".text", "")
@@ -685,8 +685,8 @@ func (cg *CGmips) GenProcStart(unused string, fp []Entry) int {
 }
 
 func (cg *CGmips) GenProcEntry(ident string, parsize int, localsize int) {
-	cg.putInstr(".globl"+ident, "")
-	cg.putInstr(".ent"+ident, "")
+	cg.putInstr(".globl "+ident, "")
+	cg.putInstr(".ent "+ident, "")
 	var lab_list []string
 	lab_list = append(lab_list, ident)
 	cg.putLab(lab_list, "")
