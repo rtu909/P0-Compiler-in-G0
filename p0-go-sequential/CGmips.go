@@ -229,7 +229,7 @@ type Cond struct {
 }
 
 func (cond *Cond) GetP0Type() P0Type {
-	return nil
+	return &P0Bool{}
 }
 
 func (cond *Cond) GetName() string {
