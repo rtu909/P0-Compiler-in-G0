@@ -33,6 +33,14 @@ func (wg *WasmGenerator) GenRecord(p0Type P0Type) P0Type {
 	p0record := p0Type.(*P0Record)
 	var sum int = 0
 	for _, param := range p0record.GetFields() {
+		asVar, isVar := param.(*P0Var)
+		if isVar {
+			asVar.offset = sum
+		}
+		asRef, isRef := param.(*P0Ref)
+		if isRef {
+			asRef.offset = sum
+		}
 		sum += param.GetSize()
 	}
 	p0record.SetSize(sum)
