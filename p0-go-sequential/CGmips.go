@@ -40,7 +40,7 @@ func (cg *CGmips) obtainReg() string {
 		mark("out of registers")
 		return R0
 	} else {
-		var popped = cg.regs[9]
+		var popped = cg.regs[len(cg.regs)-1]
 		cg.regs = cg.regs[0 : len(cg.regs)-1]
 		return popped
 	}
@@ -277,8 +277,8 @@ func (cg *CGmips) NewCond(tp interface{}, cond string, left interface{}, right i
 	return (c)
 }
 
-func (cg *CGmips) testRange(x P0Const) {
-	if (x.GetValue().(int) >= 0x8000) || (x.GetValue().(int) < -0x8000) {
+func (cg *CGmips) testRange(x interface{}) {
+	if (x.(*P0Const).GetValue().(int) >= 0x8000) || (x.(*P0Const).GetValue().(int) < -0x8000) {
 		mark("value too large")
 	}
 }
@@ -292,7 +292,7 @@ func (cg *CGmips) loadItemReg(x interface{}, r string) {
 		cg.putMemOp("lw", r, x.(*P0Var).GetRegister(), strconv.Itoa(x.(*P0Var).GetAddress()))
 		cg.releaseReg(x.(*P0Var).GetRegister())
 	} else if xisConst {
-		cg.testRange(x.(P0Const))
+		cg.testRange(x)
 		cg.putOp("addi", r, R0, strconv.Itoa(x.(*P0Const).GetValue().(int)))
 	} else if xisReg {
 		cg.putOp("add", r, x.(Reg).reg, R0)
@@ -311,7 +311,7 @@ func (cg *CGmips) loadItem(x interface{}) *Reg {
 		r = cg.obtainReg()
 		cg.loadItemReg(x, r)
 	}
-	return &Reg{x.(*P0Const).GetP0Type(), r}
+	return &Reg{x.(P0Type).GetP0Type(), r}
 }
 
 //todo
@@ -365,8 +365,8 @@ func (cg *CGmips) put(cd string, x interface{}, y interface{}) interface{} {
 		if !yisReg {
 			y = cg.loadItem(y.(P0Type))
 		}
-		cg.putOp(cd, x.(Reg).reg, r, y.(Reg).reg)
-		cg.releaseReg(y.(Reg).reg)
+		cg.putOp(cd, x.(*Reg).reg, r, y.(*Reg).reg)
+		cg.releaseReg(y.(*Reg).reg)
 	}
 	return x
 }
@@ -380,8 +380,8 @@ func (cg *CGmips) GenVar(x Entry) Entry {
 	_, xisRef := x.(*P0Ref)
 	_, xisVar := x.(*P0Var)
 	if xisRef {
-		y := P0Var{p0type: x.GetP0Type()}
-		y.SetLevel(x.GetLevel())
+		y = &P0Var{p0type: x.GetP0Type()}
+		y.(*P0Var).SetLevel(x.GetLevel())
 
 		var regList []string
 		regList = append(regList, R0)
@@ -397,13 +397,13 @@ func (cg *CGmips) GenVar(x Entry) Entry {
 			}
 		}
 		if xinReg {
-			y.SetRegister(x.(*P0Ref).GetRegister())
-			y.SetAddress(0)
+			y.(*P0Var).SetRegister(x.(*P0Ref).GetRegister())
+			y.(*P0Var).SetAddress(0)
 		} else {
-			y.SetRegister(cg.obtainReg())
-			y.SetAddress(0)
+			y.(*P0Var).SetRegister(cg.obtainReg())
+			y.(*P0Var).SetAddress(0)
 
-			cg.putMemOp("lw", y.GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
+			cg.putMemOp("lw", y.(*P0Var).GetRegister(), x.(*P0Ref).GetRegister(), strconv.Itoa(x.(*P0Ref).GetAddress()))
 		}
 	} else if xisVar {
 		var regList []string
@@ -415,20 +415,20 @@ func (cg *CGmips) GenVar(x Entry) Entry {
 
 		var xinReg bool
 		for i := 0; i < len(regList); i++ {
-			if x.(*P0Ref).GetRegister() == regList[i] {
+			if x.(*P0Var).GetRegister() == regList[i] {
 				xinReg = true
 			}
 		}
 		if xinReg {
-			y = Reg{
+			y = &Reg{
 				tp:  x.GetP0Type(),
 				reg: x.(*P0Var).GetRegister(),
 			}
 		} else {
-			y := P0Var{p0type: x.GetP0Type()}
-			y.SetLevel(x.GetLevel())
-			y.SetRegister(x.(*P0Var).GetRegister())
-			y.SetAddress(x.(*P0Var).GetAddress())
+			y = &P0Var{p0type: x.GetP0Type()}
+			y.(*P0Var).SetLevel(x.GetLevel())
+			y.(*P0Var).SetRegister(x.(*P0Var).GetRegister())
+			y.(*P0Var).SetAddress(x.(*P0Var).GetAddress())
 		}
 
 	} else {
