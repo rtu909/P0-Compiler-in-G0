@@ -635,6 +635,7 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 					typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 				}
 				for sym == SEMICOLON {
+					getSym()
 					if sym == VAR {
 						getSym()
 						typedIds(func(p0type P0Type) P0Type { return &P0Ref{p0type, "", 0, "", 0, 0} })
