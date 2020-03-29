@@ -671,11 +671,11 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 
 func program() string {
 	st.NewDecl("boolean", cg.GenBool(&P0Bool{}))
-	st.NewDecl("integer", cg.GenBool(&P0Int{}))
-	st.NewDecl("true", &P0Const{&P0Bool{}, "", 0, 1})
-	st.NewDecl("false", &P0Const{&P0Bool{}, "", 0, 0})
-	st.NewDecl("read", &P0StdProc{nil, "", 0, []P0Type{&P0Ref{&P0Int{}, "", 0, "", 0, 0}}})
-	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{&P0Int{}, "", 0, "", 0, 0}}})
+	st.NewDecl("integer", cg.GenInt(&P0Int{}))
+	st.NewDecl("true", &P0Const{cg.GenBool(&P0Bool{}), "", 0, 1})
+	st.NewDecl("false", &P0Const{cg.GenBool(&P0Bool{}), "", 0, 0})
+	st.NewDecl("read", &P0StdProc{nil, "", 0, []P0Type{&P0Ref{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
+	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
 	st.NewDecl("writeln", &P0StdProc{nil, "", 0, []P0Type{}})
 	cg.GenProgStart()
 	getElseMark(sym == PROGRAM, "'program expected")

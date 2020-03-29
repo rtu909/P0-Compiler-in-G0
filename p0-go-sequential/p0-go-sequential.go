@@ -1,5 +1,5 @@
 package main
 
 func main() {
-	compileFile("../p0-programs/sampleCode.p", "wat")
+	compileFile("../p0-programs/arrayrec.p", "wat")
 }

@@ -147,18 +147,18 @@ func (wg *WasmGenerator) GenUnaryOp(op int, entry Entry) Entry {
 	case MINUS:
 		wg.asm = append(wg.asm, "i32.const -1")
 		wg.asm = append(wg.asm, "i32.mul")
-		entry = &P0Var{&P0Int{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	case NOT:
 		wg.asm = append(wg.asm, "i32.eqz")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case AND:
 		wg.asm = append(wg.asm, "if (result i32)")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case OR:
 		wg.asm = append(wg.asm, "if (result i32)")
 		wg.asm = append(wg.asm, "i32.const 1")
 		wg.asm = append(wg.asm, "else")
-		entry = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		entry = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	default:
 		mark("WASM: unary operator?")
 	}
@@ -182,18 +182,18 @@ func (wg *WasmGenerator) GenBinaryOp(op int, x, y Entry) Entry {
 		case MOD:
 			wg.asm = append(wg.asm, "i32.rem_s")
 		}
-		x = &P0Var{&P0Int{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	case AND:
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "else")
 		wg.asm = append(wg.asm, "i32.const 0")
 		wg.asm = append(wg.asm, "end")
-		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	case OR:
 		// x should already be on the stack b/c magic
 		wg.LoadItem(y)
 		wg.asm = append(wg.asm, "end")
-		x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+		x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	default:
 		panic("Unrecognized binary operator")
 	}
@@ -219,7 +219,7 @@ func (wg *WasmGenerator) GenRelation(op int, x Entry, y Entry) Entry {
 	default:
 		panic("Unrecognized relational operator")
 	}
-	x = &P0Var{&P0Bool{}, "", -1, "", 0, 0}
+	x = &P0Var{wg.GenBool(&P0Bool{}), "", -1, "", 0, 0}
 	return x
 }
 
@@ -394,7 +394,7 @@ func (wg *WasmGenerator) GenCall(pr Entry) {
 func (wg *WasmGenerator) GenRead(x Entry) {
 	wg.asm = append(wg.asm, "call $read")
 	// Dr. Sekerinski's 'hack' from the email I sent him
-	y := &P0Var{&P0Int{}, "", -1, "", 0, 0}
+	y := &P0Var{wg.GenInt(&P0Int{}), "", -1, "", 0, 0}
 	wg.GenAssign(x, y)
 }
 
