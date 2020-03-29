@@ -371,7 +371,6 @@ func statement() Entry {
 			i := 0
 			if sym == LPAREN {
 				getSym()
-				print(sym)
 				if doesContain(FIRSTEXPRESSION[:], sym) {
 					y = expression()
 					if i < len(fp) {
@@ -418,9 +417,11 @@ func statement() Entry {
 					} else if x.GetName() == "writeln" {
 						cg.GenWriteln()
 					}
+				} else {
+					cg.GenCall(x)
 				}
 			} else {
-				cg.GenCall(x)
+				mark("'(' expected")
 			}
 		default:
 			mark("variable or procedure expected")

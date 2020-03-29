@@ -216,9 +216,9 @@ func NewReg(tp P0Type, reg string) Reg {
 	return r
 }
 
-// Cond is used like a symbol table Entry,, so it implements the same interface
+// Cond is used like a symbol table Entry, so it implements the same interface
 type Cond struct {
-	tp          P0Type
+	tp          interface{}
 	cond        string
 	left, right interface{}
 	labA        []string
@@ -226,7 +226,7 @@ type Cond struct {
 }
 
 func (cond *Cond) GetP0Type() P0Type {
-	return cond.tp
+	return nil
 }
 
 func (cond *Cond) GetName() string {
