@@ -406,8 +406,8 @@ func statement() Entry {
 						}
 						i++
 					}
-					getElseMark(sym == RPAREN, "')' expected")
 				}
+				getElseMark(sym == RPAREN, "')' expected")
 				if i < len(fp) {
 					mark("too few parameters")
 				} else if !xIsProc { // x is P0StdProc
