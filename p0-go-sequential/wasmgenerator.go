@@ -68,9 +68,9 @@ func (wg *WasmGenerator) GenGlobalVars(sc []Entry, start int) int {
 }
 
 func (wg *WasmGenerator) GenLocalVars(sc []Entry, start int) int {
-	for _, entry := range sc {
+	for index, entry := range sc {
 		asVar, isVar := entry.(*P0Var)
-		if isVar {
+		if isVar && index >= start {
 			switch asVar.GetP0Type().(type) {
 			case *P0Int, *P0Bool:
 				(*wg).asm = append((*wg).asm, "(local $"+entry.GetName()+" i32)")
