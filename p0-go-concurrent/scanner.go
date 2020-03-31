@@ -70,7 +70,13 @@ func ScannerInit(r *bufio.Reader, pc chan SourceUnit) {
 	pos, lastpos, errpos = 0, 0, 0
 	sym, val, error, reader = 0, nil, false, r
 	getChar()
-	getSym()
+
+	for {
+		getSym()
+		if ch == string(0) {
+			return
+		}
+	}
 }
 
 type SourceUnit struct {

@@ -27,7 +27,7 @@ func main() {
 	tokenChannel := make(chan SourceUnit, 5)
 	endChannel := make(chan int)
 	// start the parser
-	ScannerInit(reader, tokenChannel)
+	go ScannerInit(reader, tokenChannel)
 	// start the scanner
 	go compileFile(tokenChannel, endChannel, destFilePath, "wat")
 	<-endChannel
