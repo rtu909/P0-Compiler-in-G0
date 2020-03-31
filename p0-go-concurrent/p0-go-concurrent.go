@@ -2,15 +2,23 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 )
 
 func main() {
 
+	sourceFilePath := "../p0-programs/Fibonacci.p"
+	var destFilePath string
+
 	// Open a file for buffered reading
-	f, err := os.Open("../p0-programs/Fibonacci.p")
+	if strings.HasSuffix(sourceFilePath, ".p") {
+		destFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
+	} else {
+		panic(".p file extension expected")
+	}
+
+	f, err := os.Open(sourceFilePath)
 	if err != nil {
 		panic("Unable to open the requested file")
 	}
@@ -21,12 +29,6 @@ func main() {
 	// start the parser
 	ScannerInit(reader, tokenChannel)
 	// start the scanner
-	compileFile(tokenChannel, endChannel, "wat")
-	if strings.HasSuffix(sourceFilePath, ".p") {
-		var destinationFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
-	} else {
-		fmt.Printf(".p file extension expected")
-		panic(nil)
-	}
+	go compileFile(tokenChannel, endChannel, destFilePath, "wat")
 	<-endChannel
 }

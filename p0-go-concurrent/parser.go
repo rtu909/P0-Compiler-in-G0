@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"strings"
 )
 
 var FIRSTFACTOR = [4]int{IDENT, NUMBER, LPAREN, NOT}
@@ -699,7 +697,7 @@ func program() string {
 	return cg.GenProgExit()
 }
 
-func compileString(sourceCode string, destinationFilePath string, target P0Target) {
+func compileString(destinationFilePath string, target P0Target) {
 	switch target {
 	case Wat:
 		// Prepare
@@ -710,7 +708,6 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	default:
 		panic("target recognized, but it is not supported")
 	}
-	ScannerInit(sourceCode)
 	st = new(SliceMapSymbolTable)
 	st.Init()
 	p := program()
