@@ -56,18 +56,26 @@ var pos, lastpos, errpos int
 var sym int
 var val interface{}
 var error bool
-var source, ch string
+var ch string
 var index int
 var reader bufio.Reader
 
+var parserChannel chan SourceUnit
+
 //initialization of the scanner
 //source is string
-func ScannerInit(src string) {
+func ScannerInit(r bufio.Reader, pc chan SourceUnit) {
+	parserChannel = pc
 	line, lastline, errline = 1, 1, 1
 	pos, lastpos, errpos = 0, 0, 0
-	sym, val, error, source, index = 0, nil, false, src, 0
+	sym, val, error, reader, index = 0, nil, false, r, 0
 	getChar()
 	getSym()
+}
+
+type SourceUnit struct {
+	sym int
+	val interface{}
 }
 
 //assigns the next character in ch
@@ -228,4 +236,6 @@ func getSym() {
 		getChar()
 		sym = 0
 	}
+	result := SourceUnit{sym, val}
+	parserChannel <- result
 }
