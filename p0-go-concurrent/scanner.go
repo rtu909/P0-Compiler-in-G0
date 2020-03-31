@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"math"
 	"strconv"
 )
@@ -57,7 +58,6 @@ var sym int
 var val interface{}
 var error bool
 var ch string
-var index int
 var reader bufio.Reader
 
 var parserChannel chan SourceUnit
@@ -68,7 +68,7 @@ func ScannerInit(r bufio.Reader, pc chan SourceUnit) {
 	parserChannel = pc
 	line, lastline, errline = 1, 1, 1
 	pos, lastpos, errpos = 0, 0, 0
-	sym, val, error, reader, index = 0, nil, false, r, 0
+	sym, val, error, reader = 0, nil, false, r
 	getChar()
 	getSym()
 }
@@ -82,10 +82,11 @@ type SourceUnit struct {
 //variables line, pos are updated with the current location in source
 //lastline, lastpos are updated with location of previously read character
 func getChar() {
-	if index == len(source) {
+	rune, _, err := reader.ReadRune()
+	if err == io.EOF {
 		ch = string(0) //equivalent to chr(0), converts 0 to UTF=8 string
 	} else {
-		ch, index = string(source[index]), index+1
+		ch = string(rune)
 		lastpos = pos
 		if ch == string('\n') {
 			pos, line = 0, line+1
@@ -127,11 +128,12 @@ var KEYWORDS = map[string]int{
 }
 
 func identKW() {
-	start := index - 1
+	var valStr = ""
 	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
 		getChar()
+		valStr += ch
 	}
-	val = source[start : index-1] //originally -1
+	val = valStr
 	//fmt.Println(val)
 	var exists bool
 	sym, exists = KEYWORDS[val.(string)]
