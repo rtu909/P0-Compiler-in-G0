@@ -245,7 +245,7 @@ func getSym() {
 		getChar()
 		sym = 0
 	}
-	fmt.Println(sym, val)
+	//fmt.Println(sym, val)
 	result := SourceUnit{sym, val}
 	parserChannel <- result
 }
