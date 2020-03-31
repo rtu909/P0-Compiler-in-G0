@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"math"
 	"strconv"
@@ -57,6 +58,7 @@ var val interface{}
 var error bool
 var source, ch string
 var index int
+var reader bufio.Reader
 
 //initialization of the scanner
 //source is string
