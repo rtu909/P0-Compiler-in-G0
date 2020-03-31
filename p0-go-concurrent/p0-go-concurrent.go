@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -20,5 +22,11 @@ func main() {
 	ScannerInit(reader, tokenChannel)
 	// start the scanner
 	compileFile(tokenChannel, endChannel, "wat")
+	if strings.HasSuffix(sourceFilePath, ".p") {
+		var destinationFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
+	} else {
+		fmt.Printf(".p file extension expected")
+		panic(nil)
+	}
 	<-endChannel
 }

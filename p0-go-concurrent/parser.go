@@ -25,30 +25,27 @@ var cg CodeGenerator
 var sourceUnitChannel chan SourceUnit
 var currSym int
 var currVal interface{}
-var currLine int
-var currPos int
 
 // Gets the next symbol from the source unit channel
 // Sets currVal and codePosition
-func getTheNextSym() int {
+func getNextSym() int {
 	su := <-sourceUnitChannel
 	currSym = su.sym
 	currVal = su.val
-	currLine = su.line
-	currPos = su.pos
+	return currSym
 }
 
 func selector(x Entry) Entry {
 	var a = [2]int{PERIOD, LBRAK}
-	for doesContain(a[:], sym) {
-		if sym == PERIOD { // x.f
-			getSym()
-			if sym == IDENT {
+	for doesContain(a[:], currSym) {
+		if currSym == PERIOD { // x.f
+			getNextSym()
+			if currSym == IDENT {
 				asRec, isRec := x.GetP0Type().(*P0Record)
 				if isRec {
 					fieldFound := false
 					for _, f := range asRec.GetFields() {
-						if f.GetName() == val.(string) {
+						if f.GetName() == currVal.(string) {
 							x = cg.GenSelect(x, f)
 							fieldFound = true
 							break
@@ -57,7 +54,7 @@ func selector(x Entry) Entry {
 					if !fieldFound {
 						mark("not a field")
 					}
-					getSym()
+					getNextSym()
 				} else {
 					mark("not a record")
 				}
@@ -65,7 +62,7 @@ func selector(x Entry) Entry {
 				mark("identifier expected")
 			}
 		} else { // x[y]
-			getSym()
+			getNextSym()
 			var y = expression()
 			xAsArray, xIsArray := x.GetP0Type().(*P0Array)
 			if xIsArray {
@@ -84,8 +81,8 @@ func selector(x Entry) Entry {
 			} else {
 				mark("not an array")
 			}
-			if sym == RBRAK {
-				getSym()
+			if currSym == RBRAK {
+				getNextSym()
 			} else {
 				mark("] expected")
 			}
@@ -95,16 +92,16 @@ func selector(x Entry) Entry {
 }
 
 func factor() Entry {
-	if !doesContain(FIRSTFACTOR[:], sym) {
+	if !doesContain(FIRSTFACTOR[:], currSym) {
 		mark("expression expected")
-		for !(doesContain(FOLLOWFACTOR[:], sym) || doesContain(STRONGSYMS[:], sym) ||
-			doesContain(FIRSTFACTOR[:], sym)) {
-			getSym()
+		for !(doesContain(FOLLOWFACTOR[:], currSym) || doesContain(STRONGSYMS[:], currSym) ||
+			doesContain(FIRSTFACTOR[:], currSym)) {
+			getNextSym()
 		}
 	}
 	var x Entry
-	if sym == IDENT {
-		x = st.Find(val.(string))
+	if currSym == IDENT {
+		x = st.Find(currVal.(string))
 
 		_, xIsVar := x.(*P0Var)
 		_, xIsRef := x.(*P0Ref)
@@ -112,7 +109,7 @@ func factor() Entry {
 
 		if xIsVar || xIsRef {
 			x = cg.GenVar(x)
-			getSym()
+			getNextSym()
 		} else if xIsConst {
 			x = &P0Const{
 				x.GetP0Type(),
@@ -121,30 +118,30 @@ func factor() Entry {
 				xAsConst.GetValue().(int),
 			}
 			x = cg.GenConst(x)
-			getSym()
+			getNextSym()
 		} else {
 			mark("expression expected")
 		}
 		x = selector(x)
-	} else if sym == NUMBER {
+	} else if currSym == NUMBER {
 		x = &P0Const{
 			cg.GenInt(&P0Int{}),
 			"",
 			0,
-			val,
+			currVal,
 		}
 		x = cg.GenConst(x)
-		getSym()
-	} else if sym == LPAREN {
-		getSym()
+		getNextSym()
+	} else if currSym == LPAREN {
+		getNextSym()
 		x = expression()
-		if sym == RPAREN {
-			getSym()
+		if currSym == RPAREN {
+			getNextSym()
 		} else {
 			mark(") expected")
 		}
-	} else if sym == NOT {
-		getSym()
+	} else if currSym == NOT {
+		getNextSym()
 		x = factor()
 		_, xIsBool := x.GetP0Type().(*P0Bool)
 		xAsConst2, xIsConst2 := x.(*P0Const)
@@ -170,9 +167,9 @@ func factor() Entry {
 func term() Entry {
 	var x = factor()
 
-	for sym == TIMES || sym == DIV || sym == MOD || sym == AND {
-		var op = sym
-		getSym()
+	for currSym == TIMES || currSym == DIV || currSym == MOD || currSym == AND {
+		var op = currSym
+		getNextSym()
 
 		_, xIsConst1 := x.(*P0Const)
 		if op == AND && !xIsConst1 {
@@ -217,11 +214,11 @@ func term() Entry {
 
 func simpleExpression() Entry {
 	var x Entry
-	if sym == PLUS {
-		getSym()
+	if currSym == PLUS {
+		getNextSym()
 		x = term()
-	} else if sym == MINUS {
-		getSym()
+	} else if currSym == MINUS {
+		getNextSym()
 		x = term()
 		_, xIsInt := x.GetP0Type().(*P0Int)
 		if !xIsInt {
@@ -231,9 +228,9 @@ func simpleExpression() Entry {
 		x = term()
 	}
 
-	for sym == PLUS || sym == MINUS || sym == OR {
-		var op = sym
-		getSym()
+	for currSym == PLUS || currSym == MINUS || currSym == OR {
+		var op = currSym
+		getNextSym()
 
 		_, xIsConst1 := x.(*P0Const)
 		if op == OR && !xIsConst1 {
@@ -280,9 +277,9 @@ func simpleExpression() Entry {
 
 func expression() Entry {
 	x := simpleExpression()
-	for sym == EQ || sym == NE || sym == LT || sym == LE || sym == GT || sym == GE {
-		op := sym
-		getSym()
+	for currSym == EQ || currSym == NE || currSym == LT || currSym == LE || currSym == GT || currSym == GE {
+		op := currSym
+		getNextSym()
 		y := simpleExpression()
 		_, xIsBool := x.GetP0Type().(*P0Bool)
 		_, yIsBool := y.GetP0Type().(*P0Bool)
@@ -327,36 +324,36 @@ func expression() Entry {
 }
 
 func compoundStatement() Entry {
-	getElseMark(sym == BEGIN, "'begin' expected")
+	getElseMark(currSym == BEGIN, "'begin' expected")
 	x := statement()
-	for sym == SEMICOLON || doesContain(FIRSTSTATEMENT[:], sym) {
-		getElseMark(sym == SEMICOLON, "; missing")
+	for currSym == SEMICOLON || doesContain(FIRSTSTATEMENT[:], currSym) {
+		getElseMark(currSym == SEMICOLON, "; missing")
 		y := statement()
 		cg.GenSeq(x, y) // This returns a value in p0 to build the AST string representation; we just set x to nil here (same effect)
 		x = nil
 	}
-	getElseMark(sym == END, "'end' expected")
+	getElseMark(currSym == END, "'end' expected")
 	return x
 }
 
 // statement does a few things. It's a pretty cool function, you should take a look at the source code.
 func statement() Entry {
 	var x Entry
-	if !doesContain(FIRSTSTATEMENT[:], sym) {
+	if !doesContain(FIRSTSTATEMENT[:], currSym) {
 		mark("statement expected")
-		for !doesContain(FIRSTSTATEMENT[:], sym) && !doesContain(FOLLOWSTATEMENT[:], sym) && !doesContain(STRONGSYMS[:], sym) {
-			getSym()
+		for !doesContain(FIRSTSTATEMENT[:], currSym) && !doesContain(FOLLOWSTATEMENT[:], currSym) && !doesContain(STRONGSYMS[:], currSym) {
+			getNextSym()
 		}
 	}
-	if sym == IDENT {
-		x = st.Find(val.(string))
-		getSym()
+	if currSym == IDENT {
+		x = st.Find(currVal.(string))
+		getNextSym()
 		switch x.(type) {
 		case *P0Var, *P0Ref:
 			x = cg.GenVar(x)
 			x = selector(x)
-			if sym == BECOMES {
-				getSym()
+			if currSym == BECOMES {
+				getNextSym()
 				y := expression()
 				_, xIsBool := x.GetP0Type().(*P0Bool)
 				_, yIsBool := y.GetP0Type().(*P0Bool)
@@ -368,9 +365,9 @@ func statement() Entry {
 				} else {
 					mark("incompatible assignment")
 				}
-			} else if sym == EQ {
+			} else if currSym == EQ {
 				mark(":= expected")
-				getSym()
+				getNextSym()
 				_ = expression() // We parse to consume the input, but we can't use the result because the code in incorrect
 			} else {
 				mark(":= expected")
@@ -386,9 +383,9 @@ func statement() Entry {
 				fp = x.(*P0StdProc).GetParameters()
 			}
 			i := 0
-			if sym == LPAREN {
-				getSym()
-				if doesContain(FIRSTEXPRESSION[:], sym) {
+			if currSym == LPAREN {
+				getNextSym()
+				if doesContain(FIRSTEXPRESSION[:], currSym) {
 					y = expression()
 					if i < len(fp) {
 						if typesEqual(fp[i].GetP0Type(), y.GetP0Type()) { // TODO: How to do this properly in Go?
@@ -402,8 +399,8 @@ func statement() Entry {
 						mark("extra parameter")
 					}
 					i++
-					for sym == COMMA {
-						getSym()
+					for currSym == COMMA {
+						getNextSym()
 						y = expression()
 						if i < len(fp) {
 							if typesEqual(fp[i].GetP0Type(), y.GetP0Type()) { // TODO: How to do this properly in Go?
@@ -419,7 +416,7 @@ func statement() Entry {
 						i++
 					}
 				}
-				getElseMark(sym == RPAREN, "')' expected")
+				getElseMark(currSym == RPAREN, "')' expected")
 				if i < len(fp) {
 					mark("too few parameters")
 				} else if !xIsProc { // x is P0StdProc
@@ -439,10 +436,10 @@ func statement() Entry {
 		default:
 			mark("variable or procedure expected")
 		}
-	} else if sym == BEGIN {
+	} else if currSym == BEGIN {
 		x = compoundStatement()
-	} else if sym == IF {
-		getSym()
+	} else if currSym == IF {
+		getNextSym()
 		x = expression()
 		_, xIsBool := x.GetP0Type().(*P0Bool)
 		if xIsBool {
@@ -450,15 +447,15 @@ func statement() Entry {
 		} else {
 			mark("boolean expected")
 		}
-		getElseMark(sym == THEN, "'then' expected")
+		getElseMark(currSym == THEN, "'then' expected")
 		y := statement()
-		if sym == ELSE {
+		if currSym == ELSE {
 			_, xIsBool = x.GetP0Type().(*P0Bool)
 			var label string
 			if xIsBool {
 				label = cg.GenElse(x, y) // TODO: GenElse needs to return something
 			}
-			getSym()
+			getNextSym()
 			statement()
 			_, xIsBool = x.GetP0Type().(*P0Bool)
 			if xIsBool {
@@ -470,8 +467,8 @@ func statement() Entry {
 			cg.GenIfThen(x) // TODO: GenIfThen needs to return something
 			x = nil
 		}
-	} else if sym == WHILE {
-		getSym()
+	} else if currSym == WHILE {
+		getNextSym()
 		t := cg.GenWhile()
 		x = expression()
 		_, xIsBool := x.GetP0Type().(*P0Bool)
@@ -480,7 +477,7 @@ func statement() Entry {
 		} else {
 			mark("boolean expected")
 		}
-		getElseMark(sym == DO, "'do' expected")
+		getElseMark(currSym == DO, "'do' expected")
 		y := statement()
 		_, xIsBool = x.GetP0Type().(*P0Bool)
 		if xIsBool {
@@ -495,25 +492,25 @@ func statement() Entry {
 
 func typ() P0Type {
 	var typeToReturn P0Type
-	if !doesContain(FIRSTTYPE[:], sym) {
+	if !doesContain(FIRSTTYPE[:], currSym) {
 		mark("type expected")
-		for !(doesContain(FIRSTTYPE[:], sym) || doesContain(FOLLOWTYPE[:], sym) || doesContain(STRONGSYMS[:], sym)) {
-			getSym()
+		for !(doesContain(FIRSTTYPE[:], currSym) || doesContain(FOLLOWTYPE[:], currSym) || doesContain(STRONGSYMS[:], currSym)) {
+			getNextSym()
 		}
 	}
-	if sym == IDENT {
-		ident := val.(string)
+	if currSym == IDENT {
+		ident := currVal.(string)
 		typeToReturn, _ = st.Find(ident).(P0Type)
-		getSym()
-	} else if sym == ARRAY {
-		getSym()
-		getElseMark(sym == LBRAK, "'[' expected")
+		getNextSym()
+	} else if currSym == ARRAY {
+		getNextSym()
+		getElseMark(currSym == LBRAK, "'[' expected")
 		x := expression()
-		getElseMark(sym == PERIOD, "'.' expected")
-		getElseMark(sym == PERIOD, "'.' expected")
+		getElseMark(currSym == PERIOD, "'.' expected")
+		getElseMark(currSym == PERIOD, "'.' expected")
 		y := expression()
-		getElseMark(sym == RBRAK, "']' expected")
-		getElseMark(sym == OF, "'of' expected")
+		getElseMark(currSym == RBRAK, "']' expected")
+		getElseMark(currSym == OF, "'of' expected")
 		z := typ()
 		xAsConst, xIsConst := x.(*P0Const)
 		yAsConst, yIsConst := y.(*P0Const)
@@ -530,15 +527,15 @@ func typ() P0Type {
 				length: yAsConst.GetValue().(int) - xAsConst.GetValue().(int) + 1,
 			})
 		}
-	} else if sym == RECORD {
-		getSym()
+	} else if currSym == RECORD {
+		getNextSym()
 		st.OpenScope()
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type: p0type} })
-		for sym == SEMICOLON {
-			getSym()
+		for currSym == SEMICOLON {
+			getNextSym()
 			typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type: p0type} })
 		}
-		getElseMark(sym == END, "'end' expected")
+		getElseMark(currSym == END, "'end' expected")
 		r := st.TopScope()
 		st.CloseScope()
 		typeToReturn = cg.GenRecord(&P0Record{fields: r})
@@ -550,25 +547,25 @@ func typ() P0Type {
 
 func typedIds(kind func(P0Type) P0Type) {
 	var tid []string
-	if sym == IDENT {
+	if currSym == IDENT {
 		tid = make([]string, 1)
-		tid[0] = val.(string)
-		getSym()
+		tid[0] = currVal.(string)
+		getNextSym()
 	} else {
 		mark("identifier expected")
 		tid = make([]string, 0)
 	}
-	for sym == COMMA {
-		getSym()
-		if sym == IDENT {
-			tid = append(tid, val.(string))
-			getSym()
+	for currSym == COMMA {
+		getNextSym()
+		if currSym == IDENT {
+			tid = append(tid, currVal.(string))
+			getNextSym()
 		} else {
 			mark("identifier expected")
 		}
 	}
-	if sym == COLON {
-		getSym()
+	if currSym == COLON {
+		getNextSym()
 		tp := typ()
 		if tp != nil {
 			for _, attrName := range tid {
@@ -582,18 +579,18 @@ func typedIds(kind func(P0Type) P0Type) {
 
 func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 	var varsize int
-	if !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym)) {
+	if !(doesContain(FIRSTDECL[:], currSym) || doesContain(FOLLOWDECL[:], currSym)) {
 		mark("'begin' or declaration expected")
-		for !(doesContain(FIRSTDECL[:], sym) || doesContain(FOLLOWDECL[:], sym) || doesContain(STRONGSYMS[:], sym)) {
-			getSym()
+		for !(doesContain(FIRSTDECL[:], currSym) || doesContain(FOLLOWDECL[:], currSym) || doesContain(STRONGSYMS[:], currSym)) {
+			getNextSym()
 		}
 	}
-	for sym == CONST {
-		getSym()
-		if sym == IDENT {
-			ident := val.(string)
-			getSym()
-			getElseMark(sym == EQ, "= expected")
+	for currSym == CONST {
+		getNextSym()
+		if currSym == IDENT {
+			ident := currVal.(string)
+			getNextSym()
+			getElseMark(currSym == EQ, "= expected")
 			x := expression()
 			_, xIsConst := x.(*P0Const)
 			if xIsConst {
@@ -604,26 +601,26 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 		} else {
 			mark("constant name expected")
 		}
-		getElseMark(sym == SEMICOLON, "; expected")
+		getElseMark(currSym == SEMICOLON, "; expected")
 	}
-	for sym == TYPE {
-		getSym()
-		if sym == IDENT {
-			ident := val.(string)
-			getSym()
-			getElseMark(sym == EQ, "= expected")
+	for currSym == TYPE {
+		getNextSym()
+		if currSym == IDENT {
+			ident := currVal.(string)
+			getNextSym()
+			getElseMark(currSym == EQ, "= expected")
 			x := typ()
 			st.NewDecl(ident, x)
-			getElseMark(sym == SEMICOLON, "; expected")
+			getElseMark(currSym == SEMICOLON, "; expected")
 		} else {
 			mark("type name expected")
 		}
 	}
 	st.OpenScope()
-	for sym == VAR {
-		getSym()
+	for currSym == VAR {
+		getNextSym()
 		typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
-		getElseMark(sym == SEMICOLON, "; expected")
+		getElseMark(currSym == SEMICOLON, "; expected")
 	}
 	localVarDecls := st.TopScope()
 	st.CloseScope()
@@ -632,26 +629,26 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 		st.NewDecl(localVarDecls[i].GetName(), localVarDecls[i])
 	}
 	varsize = generatorFunc(localVarDecls, 0)
-	for sym == PROCEDURE {
-		getSym()
-		getElseMark(sym == IDENT, "procedure name expected")
-		ident := val.(string)
+	for currSym == PROCEDURE {
+		getNextSym()
+		getElseMark(currSym == IDENT, "procedure name expected")
+		ident := currVal.(string)
 		st.NewDecl(ident, &P0Proc{nil, "", 0, nil})
 		st.OpenScope()
 		var fp []Entry
-		if sym == LPAREN {
-			getSym()
-			if sym == VAR || sym == IDENT {
-				if sym == VAR {
-					getSym()
+		if currSym == LPAREN {
+			getNextSym()
+			if currSym == VAR || currSym == IDENT {
+				if currSym == VAR {
+					getNextSym()
 					typedIds(func(p0type P0Type) P0Type { return &P0Ref{p0type, "", 0, "", 0, 0} })
 				} else {
 					typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
 				}
-				for sym == SEMICOLON {
-					getSym()
-					if sym == VAR {
-						getSym()
+				for currSym == SEMICOLON {
+					getNextSym()
+					if currSym == VAR {
+						getNextSym()
 						typedIds(func(p0type P0Type) P0Type { return &P0Ref{p0type, "", 0, "", 0, 0} })
 					} else {
 						typedIds(func(p0type P0Type) P0Type { return &P0Var{p0type, "", 0, "", 0, 0} })
@@ -667,18 +664,18 @@ func declarations(generatorFunc func(declaredVars []Entry, start int) int) int {
 				tmp[i] = item.(P0Type)
 			}
 			st.Find(ident).(*P0Proc).parameters = tmp
-			getElseMark(sym == RPAREN, ") expected")
+			getElseMark(currSym == RPAREN, ") expected")
 		} else {
 			fp = make([]Entry, 0)
 		}
 		parsize := cg.GenProcStart(ident, fp)
-		getElseMark(sym == SEMICOLON, "; expected")
+		getElseMark(currSym == SEMICOLON, "; expected")
 		localsize := declarations(cg.GenLocalVars)
 		cg.GenProcEntry(ident, parsize, localsize)
 		var x Entry = compoundStatement()
 		cg.GenProcExit(x, parsize, localsize)
 		st.CloseScope()
-		getElseMark(sym == SEMICOLON, "; expected")
+		getElseMark(currSym == SEMICOLON, "; expected")
 	}
 	return varsize
 }
@@ -692,10 +689,10 @@ func program() string {
 	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
 	st.NewDecl("writeln", &P0StdProc{nil, "", 0, []P0Type{}})
 	cg.GenProgStart()
-	getElseMark(sym == PROGRAM, "'program expected")
+	getElseMark(currSym == PROGRAM, "'program expected")
 	// The original program actually accessed the program name here
-	getElseMark(sym == IDENT, "Program name expected")
-	getElseMark(sym == SEMICOLON, "; expected")
+	getElseMark(currSym == IDENT, "Program name expected")
+	getElseMark(currSym == SEMICOLON, "; expected")
 	declarations(cg.GenGlobalVars)
 	cg.GenProgEntry( /*ident*/ ) // ident was passed in the og P0 compiler, but it is not used so we removed it
 	compoundStatement()
@@ -725,17 +722,9 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	}
 }
 
-func compileFile(tokenChannel chan SourceUnit, endChannel chan int, target string) {
-	if strings.HasSuffix(sourceFilePath, ".p") {
-		var fileData, fileOpenError = ioutil.ReadFile(sourceFilePath)
-		panicIfError(fileOpenError)
-		var sourceCode = string(fileData)
-		var destinationFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
-		compileString(sourceCode, destinationFilePath, toP0Target(target))
-	} else {
-		fmt.Printf(".p file extension expected")
-		panic(nil)
-	}
+func compileFile(tokenChannel chan SourceUnit, endChannel chan int, destFilePath string, target string) {
+	sourceUnitChannel = tokenChannel
+	compileString(destFilePath, toP0Target(target))
 	endChannel <- 0
 }
 
@@ -775,11 +764,11 @@ func doesContain(elements []int, e int) bool {
 	return false
 }
 
-// If the predicate is true, getSym is called. Otherwise, mark is called with the message
+// If the predicate is true, getNextSym is called. Otherwise, mark is called with the message
 // I introduced to try to make the code easier to read; if it has the opposite effect let me know - David
 func getElseMark(predicate bool, markMessage string) {
 	if predicate {
-		getSym()
+		getNextSym()
 	} else {
 		mark(markMessage)
 	}
