@@ -30,6 +30,7 @@ func getNextSym() int {
 	su := <-sourceUnitChannel
 	currSym = su.sym
 	currVal = su.val
+	//fmt.Println(currSym)
 	return currSym
 }
 
@@ -687,6 +688,7 @@ func program() string {
 	st.NewDecl("write", &P0StdProc{nil, "", 0, []P0Type{&P0Var{cg.GenInt(&P0Int{}), "", 0, "", 0, 0}}})
 	st.NewDecl("writeln", &P0StdProc{nil, "", 0, []P0Type{}})
 	cg.GenProgStart()
+	getNextSym()
 	getElseMark(currSym == PROGRAM, "'program expected")
 	// The original program actually accessed the program name here
 	getElseMark(currSym == IDENT, "Program name expected")

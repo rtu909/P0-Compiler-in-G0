@@ -136,8 +136,8 @@ var KEYWORDS = map[string]int{
 func identKW() {
 	var valStr = ""
 	for ("A" <= ch && ch <= "Z") || ("a" <= ch && ch <= "z") || ("0" <= ch && ch <= "9") {
-		getChar()
 		valStr += ch
+		getChar()
 	}
 	val = valStr
 	//fmt.Println(val)
@@ -149,6 +149,7 @@ func identKW() {
 		//fmt.Println("didn't work")
 		sym = IDENT
 	}
+	//fmt.Println(sym, val)
 }
 
 func comment() {
@@ -173,7 +174,7 @@ func getSym() {
 		number()
 	} else if ch == "{" {
 		comment()
-		getSym()
+		return
 	} else if ch == "*" {
 		getChar()
 		sym = TIMES
@@ -244,6 +245,7 @@ func getSym() {
 		getChar()
 		sym = 0
 	}
+	fmt.Println(sym, val)
 	result := SourceUnit{sym, val}
 	parserChannel <- result
 }
