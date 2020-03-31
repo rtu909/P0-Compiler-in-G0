@@ -83,6 +83,7 @@ func getChar() {
 			lastline, pos = line, pos+1
 		}
 	}
+
 }
 
 //prints error message with current location in the source

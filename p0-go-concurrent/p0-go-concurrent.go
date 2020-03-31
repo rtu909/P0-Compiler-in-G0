@@ -14,7 +14,7 @@ func main() {
 	}
 	reader := bufio.NewReader(f)
 	// Make a channel to connect the scanner and the parser
-	tokenChannel := make(chan int, 5)
+	tokenChannel := make(chan SourceUnit, 5)
 	endChannel := make(chan int)
 	// start the parser
 	ScannerInit(reader, tokenChannel)
