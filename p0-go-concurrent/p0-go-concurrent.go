@@ -19,7 +19,7 @@ func main() {
 	tokenChannel := make(chan SourceUnit, 5)
 	endChannel := make(chan int)
 	// start the parser
-	ScannerInit(reader, tokenChannel)
+	go ScannerInit(reader, tokenChannel)
 	// start the scanner
 	compileFile(tokenChannel, endChannel, "wat")
 	if strings.HasSuffix(sourceFilePath, ".p") {
