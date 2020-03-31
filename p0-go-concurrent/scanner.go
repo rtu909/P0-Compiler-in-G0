@@ -58,13 +58,13 @@ var sym int
 var val interface{}
 var error bool
 var ch string
-var reader bufio.Reader
+var reader *bufio.Reader
 
 var parserChannel chan SourceUnit
 
 //initialization of the scanner
 //source is string
-func ScannerInit(r bufio.Reader, pc chan SourceUnit) {
+func ScannerInit(r *bufio.Reader, pc chan SourceUnit) {
 	parserChannel = pc
 	line, lastline, errline = 1, 1, 1
 	pos, lastpos, errpos = 0, 0, 0
