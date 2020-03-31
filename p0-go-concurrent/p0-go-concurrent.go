@@ -9,7 +9,7 @@ func main() {
 
 	// Open a file for buffered reading
 	f, err := os.Open("../p0-programs/Fibonacci.p")
-	if err {
+	if err != nil {
 		panic("Unable to open the requested file")
 	}
 	reader := bufio.NewReader(f)

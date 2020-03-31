@@ -22,6 +22,21 @@ var STRONGSYMS = [8]int{CONST, TYPE, VAR, PROCEDURE, WHILE, IF, BEGIN, EOF}
 // TODO: put into a struct?
 var st SymbolTable
 var cg CodeGenerator
+var sourceUnitChannel chan SourceUnit
+var currSym int
+var currVal interface{}
+var currLine int
+var currPos int
+
+// Gets the next symbol from the source unit channel
+// Sets currVal and codePosition
+func getTheNextSym() int {
+	su := <-sourceUnitChannel
+	currSym = su.sym
+	currVal = su.val
+	currLine = su.line
+	currPos = su.pos
+}
 
 func selector(x Entry) Entry {
 	var a = [2]int{PERIOD, LBRAK}
@@ -710,7 +725,7 @@ func compileString(sourceCode string, destinationFilePath string, target P0Targe
 	}
 }
 
-func compileFile(sourceFilePath string, target string) {
+func compileFile(tokenChannel chan SourceUnit, endChannel chan int, target string) {
 	if strings.HasSuffix(sourceFilePath, ".p") {
 		var fileData, fileOpenError = ioutil.ReadFile(sourceFilePath)
 		panicIfError(fileOpenError)
@@ -721,6 +736,7 @@ func compileFile(sourceFilePath string, target string) {
 		fmt.Printf(".p file extension expected")
 		panic(nil)
 	}
+	endChannel <- 0
 }
 
 // P0Primitive is an enumerated type that represents one of the built-in types in P0.
