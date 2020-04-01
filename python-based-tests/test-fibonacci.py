@@ -1,8 +1,8 @@
 import time
 import os
-import parser
+import subprocess
 
-print("\tPYTHON\tGO SEQUENTIAL\tGO CONCURRENT")
+print("\tPYTHON\t\t\tGO SEQUENTIAL\t\tGO CONCURRENT")
 
 # Increase the size of the program from 100 to 1000 lines of code
 for size in range(1, 11):
@@ -61,15 +61,15 @@ for size in range(1, 11):
   end\n""")
     # PYTHON
     p_tic = time.perf_counter()
-    parser.compileFile("temp.p")
+    subprocess.run(["python3", "../p0-python/test-main.py", "temp.p"])
     p_toc = time.perf_counter()
     # POGO SEQUENTIAL
     g_tic = time.perf_counter()
-    # TODO:
+    subprocess.run(["./p0-go-sequential", "temp.p"])
     g_toc = time.perf_counter()
     # POGO CONCURRENT
     c_tic = time.perf_counter()
-    # TODO:
+    subprocess.run(["./p0-go-concurrent", "temp.p"])
     c_toc = time.perf_counter()
     print(size, "\t", (p_toc - p_tic), "\t", (g_toc - g_tic), "\t", (c_toc - c_tic), "\t")
 

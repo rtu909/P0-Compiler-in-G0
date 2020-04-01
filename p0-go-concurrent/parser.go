@@ -714,10 +714,8 @@ func compileString(destinationFilePath string, target P0Target) {
 	st.Init()
 	p := program()
 	if p != "" && !error {
-		fmt.Println("HERE IS TEH CODEZ:\n")
-		fmt.Print(p)
 	} else {
-		print("Something went wrong in the parser and its not good :(")
+		panic("Something went wrong in the parser and its not good :(")
 	}
 }
 
