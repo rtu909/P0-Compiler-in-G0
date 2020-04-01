@@ -146,7 +146,7 @@ func identKW() {
 	//fmt.Println(sym)
 	//if val is not in KEYWORDS dictionary, then sym is IDENT
 	if !exists {
-		//fmt.Println("didn't work")
+		fmt.Println("didn't work")
 		sym = IDENT
 	}
 	//fmt.Println(sym, val)
