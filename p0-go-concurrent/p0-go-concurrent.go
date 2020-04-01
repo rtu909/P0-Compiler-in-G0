@@ -17,7 +17,7 @@ func main() {
 	}
 	sourceFilePath := args[0]
 	if !isAccessibleFile(sourceFilePath) {
-		panic("ERROR: Accessing: " + sourceFilePath + " failed. Ensure that it exists and read & write permissions are enabled.")
+		panic("ERROR: " + sourceFilePath + " is not the path to an existing file.")
 		os.Exit(1)
 	}
 
