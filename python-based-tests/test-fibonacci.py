@@ -1,8 +1,8 @@
 import time
 import os
-import parser
+import subprocess
 
-print("\tPYTHON\tGO SEQUENTIAL\tGO CONCURRENT")
+print("\tPYTHON\t\t\tGO SEQUENTIAL\t\tGO CONCURRENT")
 
 # Increase the size of the program from 100 to 1000 lines of code
 for size in range(1, 11):
@@ -59,18 +59,31 @@ for size in range(1, 11):
     writeln();
     writeln()
   end\n""")
+    RUNS = 5
     # PYTHON
-    p_tic = time.perf_counter()
-    parser.compileFile("temp.p")
-    p_toc = time.perf_counter()
+    p_avg = 0
+    for runs in range(RUNS):
+        p_tic = time.perf_counter()
+        subprocess.run(["python3", "../p0-python/test-main.py", "temp.p"])
+        p_toc = time.perf_counter()
+        p_avg += p_toc - p_tic
+    p_avg /=  RUNS
     # POGO SEQUENTIAL
-    g_tic = time.perf_counter()
-    # TODO:
-    g_toc = time.perf_counter()
+    g_avg = 0
+    for runs in range(RUNS):
+        g_tic = time.perf_counter()
+        subprocess.run(["./p0-go-sequential", "temp.p"])
+        g_toc = time.perf_counter()
+        g_avg += g_toc - g_tic
+    g_avg /= RUNS
     # POGO CONCURRENT
-    c_tic = time.perf_counter()
-    # TODO:
-    c_toc = time.perf_counter()
-    print(size, "\t", (p_toc - p_tic), "\t", (g_toc - g_tic), "\t", (c_toc - c_tic), "\t")
+    c_avg = 0
+    for runs in range(RUNS):
+        c_tic = time.perf_counter()
+        subprocess.run(["./p0-go-concurrent", "temp.p"])
+        c_toc = time.perf_counter()
+        c_avg += c_toc - c_tic
+    c_avg /= RUNS
+    print(size, "\t", p_avg, "\t", g_avg, "\t", c_avg, "\t")
 
 os.remove("temp.p")

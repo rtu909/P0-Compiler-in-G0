@@ -27,7 +27,7 @@ func main() {
 	//	panic(".p file extension expected")
 	//}
 
-	compileFile(sourceFilePath, "mips")
+	compileFile(sourceFilePath, "wat")
 }
 
 func isAccessibleFile(filePath string) bool {
