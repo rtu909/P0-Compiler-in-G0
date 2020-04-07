@@ -1,0 +1,17 @@
+Project Proposal: 3/3
+
+Nice, ambitious project, not much to comment. As a note, the scanner can be
+implemented as a Goroutine that delivers symbols to the parser. Each procedure
+can in principle be compiled concurrently, although I would be surpirsed if
+that gains much speed. Have fun!
+
+Project Artifacts:
+
+Well-done project. In the development statistics, you could include the size
+of the Python implementations. Do you have an explanation why Python becomes
+more efficient with larger programs, which I find counterintuitive, did you do
+some profiling to figure out what is going on? When using Go, did you check
+that you are indeed using multiple cores, is GOMAXPROC set correctly? Poster
+is nicely designed. Some of the text, in particular the captions of the figures,
+is rather small, people shouldn't be needing to get closer to a poster to read
+that.
