@@ -1,6 +1,9 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 type WasmGenerator struct {
 	currentLevel int
@@ -333,11 +336,11 @@ func (wg *WasmGenerator) GenProgEntry() { // NOTE: originally had an unused para
 
 func (wg *WasmGenerator) GenProgExit() string {
 	wg.asm = append(wg.asm, ")\n(memory "+strconv.Itoa(wg.memorySize/(2<<16)+1)+")\n(start $program)\n)")
-	var theCode string = ""
+	var theCode strings.Builder
 	for _, line := range wg.asm {
-		theCode += line + "\n"
+		theCode.WriteString(line + "\n")
 	}
-	return theCode
+	return theCode.String()
 }
 
 // GenProcStart generates the beginning of a procedure declaration

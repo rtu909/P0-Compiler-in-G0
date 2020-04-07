@@ -2,13 +2,14 @@ import time
 import os
 import subprocess
 
-print("\tPYTHON\t\t\tGO SEQUENTIAL\t\tGO CONCURRENT")
+
+results = "Program Size, Python (ms), Go Sequential (ms), Go Concurrent (ms)\n"
 
 # Increase the size of the program from 100 to 1000 lines of code
-for size in range(1, 11):
+for size in range(1, 21):
     with open("temp.p", "w") as f:
         f.write("""program fib;\n{ Used to store the user's input}\n  var x: integer;\n""")
-        for redef in range (1, 10 * size + 1):
+        for redef in range (1, 20 * size + 1):
             f.write("""
   { \\brief Calculates the fibonnaci series at a given value and prints it
     \\param n The value of the series to be calculated }
@@ -59,7 +60,7 @@ for size in range(1, 11):
     writeln();
     writeln()
   end\n""")
-    RUNS = 5
+    RUNS = 10
     # PYTHON
     p_avg = 0
     for runs in range(RUNS):
@@ -84,6 +85,10 @@ for size in range(1, 11):
         c_toc = time.perf_counter()
         c_avg += c_toc - c_tic
     c_avg /= RUNS
-    print(size, "\t", p_avg, "\t", g_avg, "\t", c_avg, "\t")
+    results += str(size * 750) +  "," + str(p_avg * 1000) + "," + str(g_avg * 1000) + "," + str(c_avg * 1000) + "\n"
+    print(size)
 
 os.remove("temp.p")
+
+with open("results.csv", "w") as f:
+    f.write(results)

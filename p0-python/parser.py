@@ -379,10 +379,10 @@ def compileString(src, dstfn = None, target = 'wat'):
     SC.init(src)
     ST.init()
     p = program()
-    if p != None and not SC.error:
-        if dstfn == None: print(p)
-        else:
-            with open(dstfn, 'w') as f: f.write(p);
+    # if p != None and not SC.error:
+    #     if dstfn == None: print(p)
+    #     else:
+    #         with open(dstfn, 'w') as f: f.write(p);
 
 
 def compileFile(srcfn, target = 'wat'):
