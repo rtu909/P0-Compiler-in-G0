@@ -25,7 +25,7 @@ func main() {
 
 	// Open a file for buffered reading
 	if strings.HasSuffix(sourceFilePath, ".p") {
-		destFilePath = sourceFilePath[:len(sourceFilePath)-3] + ".s"
+		destFilePath = sourceFilePath[:len(sourceFilePath)-2] + ".s"
 	} else {
 		panic(".p file extension expected")
 	}

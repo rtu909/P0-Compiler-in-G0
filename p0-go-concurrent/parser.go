@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 )
 
 var FIRSTFACTOR = [4]int{IDENT, NUMBER, LPAREN, NOT}
@@ -714,6 +715,10 @@ func compileString(destinationFilePath string, target P0Target) {
 	st.Init()
 	p := program()
 	if p != "" && !error {
+		err := ioutil.WriteFile(destinationFilePath, []byte(p), 0644)
+		if err != nil {
+			panic("Failed to write the generated code to file " + destinationFilePath)
+		}
 	} else {
 		panic("Something went wrong in the parser and its not good :(")
 	}
